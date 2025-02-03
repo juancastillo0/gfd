@@ -1,3 +1,5 @@
+import 'package:context_plus/context_plus.dart';
+import 'package:eset/src/gamelist/game_state.dart';
 import 'package:flutter/material.dart';
 
 import 'src/app.dart';
@@ -16,5 +18,8 @@ void main() async {
   // Run the app and pass in the SettingsController. The app listens to the
   // SettingsController for changes, then passes it further down to the
   // SettingsView.
-  runApp(MyApp(settingsController: settingsController));
+  runApp(ContextPlus.root(child: Builder(builder: (context) {
+    GameListStore.ref.bind(context, () => GameListStore());
+    return MyApp(settingsController: settingsController);
+  })));
 }

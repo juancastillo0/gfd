@@ -1,3 +1,5 @@
+import 'package:eset/src/system_collection/game_filter_model.dart';
+
 /// A placeholder class that represents an entity or model.
 class SampleItem {
   const SampleItem(this.id);
@@ -17,7 +19,7 @@ class Collection {
   });
 }
 
-class GameFilter {}
+// class GameFilter {}
 
 class CustomSystem {}
 
