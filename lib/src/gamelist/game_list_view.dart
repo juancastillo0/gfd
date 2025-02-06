@@ -209,12 +209,17 @@ class _GameList extends StatelessWidget {
         };
 
     final double imageWidth = 120;
+    final double systemWidth = 60;
     final double ratingWidth = 50;
     final double releaseWidth = 75;
     final double genreWidth = 120;
     final double playersWidth = 50;
 
     List<Widget> otherProps(Game item) => [
+          SizedBox(
+            width: systemWidth,
+            child: Text(item.system),
+          ),
           SizedBox(
             width: ratingWidth,
             child: Center(
@@ -297,6 +302,10 @@ class _GameList extends StatelessWidget {
             SizedBox(
               width: 30,
               child: Text('Ext'),
+            ),
+            SizedBox(
+              width: systemWidth,
+              child: Text('System'),
             ),
             SizedBox(
               width: ratingWidth,

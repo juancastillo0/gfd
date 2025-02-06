@@ -112,15 +112,13 @@ class GameDataView extends StatelessWidget {
       if (game.rating != null)
         (
           'Rating',
-          isSmall
-              ? Row(
-                  children: [
-                    Text((game.rating! * 10).round().toString()),
-                    const SizedBox(width: 2),
-                    StarsRating(rating: game.rating!),
-                  ],
-                )
-              : StarsRating(rating: game.rating!),
+          Row(
+            children: [
+              Text((game.rating! * 100).round().toString()),
+              const SizedBox(width: 2),
+              StarsRating(rating: game.rating!),
+            ],
+          ),
           Icons.reviews_rounded,
         ),
       if (game.releasedate != null)
