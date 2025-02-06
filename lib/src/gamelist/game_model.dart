@@ -1,3 +1,4 @@
+import 'package:eset/src/gamelist/playnite.dart';
 import 'package:xml/xml.dart';
 
 /// <game>
@@ -23,6 +24,8 @@ class Game {
   final String? genre;
   final int? playersMin;
   final int? playersMax;
+  final List<String>? playniteAssets;
+  final PlayniteBooleans? playniteBooleans;
 
   Game({
     required this.system,
@@ -36,12 +39,17 @@ class Game {
     required this.genre,
     required this.playersMin,
     required this.playersMax,
+    this.playniteAssets,
+    this.playniteBooleans,
   });
 
-  String get filename =>
-      path.substring(path.lastIndexOf('/') + 1, path.lastIndexOf('.'));
-  String get extension => path.substring(path.lastIndexOf('.') + 1);
-  String get relativePath => path.substring(path.indexOf('/') + 1);
+  String get filename => system == 'pc'
+      ? name!
+      : path.substring(path.lastIndexOf('/') + 1, path.lastIndexOf('.'));
+  String get extension =>
+      system == 'pc' ? '' : path.substring(path.lastIndexOf('.') + 1);
+  String get relativePath =>
+      system == 'pc' ? name! : path.substring(path.indexOf('/') + 1);
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{

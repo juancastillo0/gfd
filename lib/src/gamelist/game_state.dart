@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:context_plus/context_plus.dart';
 import 'package:eset/src/base_ui.dart' show TextEditingController;
 import 'package:eset/src/gamelist/game_model.dart';
+import 'package:eset/src/gamelist/playnite.dart';
 import 'package:eset/src/system_collection/game_filter_model.dart';
 import 'package:eset/src/system_collection/system_model.dart';
 import 'package:flutter/foundation.dart';
@@ -52,6 +53,11 @@ class GameListStore extends ChangeNotifier {
         : '/Volumes/KINGSTON/games/Emulation/ES-DE',
   );
 
+  final playniteLibraryPathController = TextEditingController(
+    text: '/Volumes/KINGSTON/games/Playnite/library/',
+  );
+  String get playniteLibraryPath => playniteLibraryPathController.text;
+
   var filterController = JsonFormController(initialData: {});
   bool showFilter = false;
   Map<String, GameFilter> storedFilters = {};
@@ -64,7 +70,16 @@ class GameListStore extends ChangeNotifier {
   bool isFiltering = false;
 
   String imagePath(Game item, {SystemImageAsset? imageAsset}) {
-    final a = (imageAsset ?? imageAssetType).name.replaceFirst(r'$', '');
+    final type = (imageAsset ?? imageAssetType);
+    if (item.system == 'pc') {
+      return item.playniteAssets!.firstWhere(
+        (element) => type == SystemImageAsset.marquees
+            ? !element.endsWith('.jpg')
+            : element.endsWith('.jpg'),
+        orElse: () => '${playniteLibraryPath}files/${item.path}/image.png',
+      );
+    }
+    final a = type.name.replaceFirst(r'$', '');
     return '${downloadedMediaPath.text}/${item.system}/$a/${item.filename}.png';
   }
 
@@ -102,7 +117,7 @@ class GameListStore extends ChangeNotifier {
             !file.uri.pathSegments.last.startsWith('.')) {
           final collectionText = await file.readAsString();
           String name = file.uri.pathSegments.last;
-            name = name.substring(0, name.length - 4); // remove .cfg
+          name = name.substring(0, name.length - 4); // remove .cfg
           if (name.startsWith('custom-')) {
             name = name.substring(7);
           }
@@ -137,6 +152,55 @@ class GameListStore extends ChangeNotifier {
         document.findAllElements('game').map((e) => Game.fromXml(e, system)),
       );
     }
+
+    final playniteDb = File('${playniteLibraryPath}games.db');
+    final companiesDb = File('${playniteLibraryPath}companies.db');
+    final genresDb = File('${playniteLibraryPath}genres.db');
+    if (playniteDb.existsSync()) {
+      final bytes = await playniteDb.readAsBytes();
+      final companiesBytes =
+          await companiesDb.exists() ? await companiesDb.readAsBytes() : null;
+      final genresBytes =
+          await genresDb.exists() ? await genresDb.readAsBytes() : null;
+
+      final playniteFiles = Directory('${playniteLibraryPath}files/');
+      final gameToAssets = <String, List<String>>{};
+      if (playniteFiles.existsSync()) {
+        final assetsList = await playniteFiles.list(recursive: true).toList();
+        for (final asset in assetsList) {
+          if (asset is File &&
+              !asset.uri.pathSegments.last.startsWith('.') &&
+              const [
+                'ico',
+                'png',
+                'jpg',
+                'jpeg',
+                'gif',
+                'bmp',
+                'svg',
+              ].contains(
+                  asset.path.substring(asset.path.lastIndexOf('.') + 1))) {
+            gameToAssets
+                .putIfAbsent(
+                  asset.uri.pathSegments[asset.uri.pathSegments.length - 2],
+                  () => [],
+                )
+                .add(asset.path);
+          }
+        }
+      }
+
+      final playniteGames = parsePlayniteDb(
+        bytes,
+        companies: companiesBytes,
+        genres: genresBytes,
+        gameToAssets: gameToAssets,
+      );
+
+      allGames.addAll(playniteGames);
+      notifyListeners();
+    }
+
     for (final g in allGames) {
       systems.add(g.system);
       if (g.genre != null) genres.add(g.genre!);
