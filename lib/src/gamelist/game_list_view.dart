@@ -81,9 +81,17 @@ class GameListView extends StatelessWidget {
               ),
               Column(
                 children: [
-                  TextButton(
-                    onPressed: store.filterGames,
-                    child: Text('Apply'),
+                  AnimatedBuilder(
+                    animation: store.storedFilterTextController,
+                    builder: (context, child) {
+                      return TextButton(
+                        onPressed: store.storedFilters.containsKey(
+                                store.storedFilterTextController.text)
+                            ? store.deleteFilter
+                            : null,
+                        child: Text('Delete'),
+                      );
+                    },
                   ),
                   TextButton(
                     onPressed: store.clearFilter,
@@ -104,6 +112,8 @@ class GameListView extends StatelessWidget {
                 genres: store.genres,
                 systems: store.systems,
                 collections: store.collections.keys,
+                developers: store.developers,
+                publishers: store.publishers,
               ),
               onFormDataSaved: (data) => store.filterGames(),
             ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:context_plus/context_plus.dart';
@@ -22,6 +23,7 @@ class GameListStore extends ChangeNotifier {
     this.hasError = false,
   }) {
     _loadGames();
+    filterController = JsonFormController(initialData: {});
   }
 
   String? get selectedGamePath => _selectedGamePath;
@@ -39,6 +41,8 @@ class GameListStore extends ChangeNotifier {
   static final ref = Ref<GameListStore>();
 
   Set<String> genres = {};
+  Set<String> developers = {};
+  Set<String> publishers = {};
   Set<String> systems = {};
   bool isGridView = false;
 
@@ -58,7 +62,28 @@ class GameListStore extends ChangeNotifier {
   );
   String get playniteLibraryPath => playniteLibraryPathController.text;
 
-  var filterController = JsonFormController(initialData: {});
+  JsonFormController? _filterController;
+  JsonFormController get filterController => _filterController!;
+  set filterController(JsonFormController v) {
+    _filterController?.dispose();
+    _filterController = v;
+    v.addListener(_onFilterUpdate);
+  }
+
+  Timer? _filterUpdateTimer;
+
+  void _onFilterUpdate() {
+    _filterUpdateTimer ??= Timer(
+      const Duration(milliseconds: 1000),
+      () {
+        final gameFilter =
+            GameFilter.fromJson(filterController.rootOutputData as Map);
+        _applyFilter(gameFilter);
+        _filterUpdateTimer = null;
+      },
+    );
+  }
+
   bool showFilter = false;
   Map<String, GameFilter> storedFilters = {};
   Map<String, List<String>> collections = {};
@@ -68,6 +93,13 @@ class GameListStore extends ChangeNotifier {
   SystemImageAsset imageAssetType = SystemImageAsset.covers;
 
   bool isFiltering = false;
+
+  double _imageWidth = 120;
+  double get imageWidth => _imageWidth;
+  set imageWidth(double imageWith) {
+    _imageWidth = imageWith;
+    notifyListeners();
+  }
 
   String imagePath(Game item, {SystemImageAsset? imageAsset}) {
     final type = (imageAsset ?? imageAssetType);
@@ -204,6 +236,8 @@ class GameListStore extends ChangeNotifier {
     for (final g in allGames) {
       systems.add(g.system);
       if (g.genre != null) genres.add(g.genre!);
+      if (g.publisher != null) publishers.add(g.publisher!);
+      if (g.developer != null) developers.add(g.developer!);
     }
     games = allGames;
   }
@@ -234,6 +268,9 @@ class GameListStore extends ChangeNotifier {
           ),
         )
         .toList();
+    if (gameFilter.order.isNotEmpty) {
+      games.sort(gameFilter.compare);
+    }
     notifyListeners();
   }
 
@@ -253,6 +290,11 @@ class GameListStore extends ChangeNotifier {
 
   void toggleFilter() {
     isFiltering = !isFiltering;
+    notifyListeners();
+  }
+
+  void deleteFilter() {
+    storedFilters.remove(storedFilterTextController.text);
     notifyListeners();
   }
 }
