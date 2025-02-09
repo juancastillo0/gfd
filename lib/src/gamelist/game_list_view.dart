@@ -122,15 +122,121 @@ class GameListView extends StatelessWidget {
       ),
     );
 
+    void showCountsDialog() {
+      final systemCount = <String, int>{};
+      final genreCount = <String, int>{};
+      for (final g in store.games) {
+        systemCount[g.system] = (systemCount[g.system] ?? 0) + 1;
+        genreCount[g.genre ?? ''] = (genreCount[g.genre ?? ''] ?? 0) + 1;
+      }
+      showDialog(
+        context: context,
+        builder: (context) {
+          final textTheme = Theme.of(context).textTheme;
+          return SimpleDialog(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            titlePadding: const EdgeInsets.all(12),
+            title: Text(
+              'Games Count: ${store.games.length}',
+              textAlign: TextAlign.center,
+            ),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Text(
+                  'Systems',
+                  style: textTheme.titleLarge,
+                ),
+              ),
+              ...systemCount.entries.map(
+                (e) => SimpleDialogOption(
+                  onPressed: () {
+                    final field =
+                        store.filterController.retrieveField('systems')!;
+                    field.value = [e.key];
+                    Navigator.pop(context);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(e.key),
+                      Text(e.value.toString()),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Text(
+                  'Genres',
+                  style: textTheme.titleLarge,
+                ),
+              ),
+              ...genreCount.entries.map(
+                (e) => SimpleDialogOption(
+                  onPressed: () {
+                    final field =
+                        store.filterController.retrieveField('genres')!;
+                    field.value = [e.key];
+                    Navigator.pop(context);
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(e.key == '' ? 'None' : e.key),
+                      Text(e.value.toString()),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            // ),
+          );
+        },
+      );
+    }
+
     final gameListWidget = Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
+            TextButton.icon(
+              onPressed: showCountsDialog,
+              icon: Icon(Icons.info_outline_rounded),
+              label: Text('${store.games.length} Games'),
+            ),
+            Container(
+              padding: const EdgeInsets.all(12),
+              width: 160,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Image Width'),
+                      Text('${store.imageWidth.round()}'),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Slider(
+                    value: store.imageWidth,
+                    padding: EdgeInsets.zero,
+                    max: 600,
+                    min: 40,
+                    onChanged: (v) => store.imageWidth = v,
+                  ),
+                ],
+              ),
+            ),
             SizedBox(
               width: 200,
               child: DropdownButtonFormField<SystemImageAsset>(
+                decoration: InputDecoration(
+                  labelText: 'Image',
+                ),
                 onChanged: store.changeImageAsset,
                 items: SystemImageAsset.values
                     .map(
@@ -218,7 +324,8 @@ class _GameList extends StatelessWidget {
           );
         };
 
-    final double imageWidth = 120;
+    final double imageWidth = store.imageWidth;
+    final double extensionWith = 40;
     final double systemWidth = 60;
     final double ratingWidth = 50;
     final double releaseWidth = 75;
@@ -263,7 +370,7 @@ class _GameList extends StatelessWidget {
     if (store.isGridView) {
       return GridView.builder(
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: imageWidth * 3,
+          maxCrossAxisExtent: imageWidth * 2,
           childAspectRatio: 0.7,
         ),
         // gridDelegate:
@@ -310,7 +417,7 @@ class _GameList extends StatelessWidget {
               child: Text('Name'),
             ),
             SizedBox(
-              width: 30,
+              width: extensionWith,
               child: Text('Ext'),
             ),
             SizedBox(
@@ -366,7 +473,7 @@ class _GameList extends StatelessWidget {
                       ),
                     ),
                     SizedBox(
-                      width: 30,
+                      width: extensionWith,
                       child: Text(item.extension),
                     ),
                     ...otherProps(item),
