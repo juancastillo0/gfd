@@ -50,16 +50,46 @@ class SettingsView extends StatelessWidget {
               ],
             ),
             TextFormField(
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'ES-DE App Data Path',
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.folder),
+                  onPressed: () {
+                    gameStore.selectDirectory(
+                      gameStore.paths.esDeAppDataConfigPath,
+                    );
+                  },
+                ),
               ),
               controller: gameStore.esDeAppDataConfigPath,
             ),
             TextFormField(
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Downloaded Media Path',
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.folder),
+                  onPressed: () {
+                    gameStore.selectDirectory(
+                      gameStore.paths.downloadedMediaPath,
+                    );
+                  },
+                ),
               ),
               controller: gameStore.downloadedMediaPath,
+            ),
+            TextFormField(
+              decoration: InputDecoration(
+                labelText: 'Playnite Library Path',
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.folder),
+                  onPressed: () {
+                    gameStore.selectDirectory(
+                      gameStore.paths.playniteLibraryPath,
+                    );
+                  },
+                ),
+              ),
+              controller: gameStore.playniteLibraryPath,
             ),
           ],
         ),
