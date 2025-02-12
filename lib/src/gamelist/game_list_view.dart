@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:context_plus/context_plus.dart';
 import 'package:eset/src/gamelist/game_model.dart';
 import 'package:eset/src/gamelist/game_state.dart';
 import 'package:eset/src/system_collection/game_filter_model.dart';
 import 'package:eset/src/system_collection/system_model.dart';
+import 'package:eset/src/utils/game_image_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:json_form/json_form.dart';
 
@@ -42,7 +41,7 @@ class GameListView extends StatelessWidget {
         ),
       Spacer(),
       DropdownMenu(
-        controller: store.storedFilterTextController,
+        controller: store.storedFilterController,
         onSelected: store.selectFilter,
         width: 150,
         dropdownMenuEntries: store.storedFilters.entries
@@ -82,11 +81,11 @@ class GameListView extends StatelessWidget {
               Column(
                 children: [
                   AnimatedBuilder(
-                    animation: store.storedFilterTextController,
+                    animation: store.storedFilterController,
                     builder: (context, child) {
                       return TextButton(
-                        onPressed: store.storedFilters.containsKey(
-                                store.storedFilterTextController.text)
+                        onPressed: store.storedFilters
+                                .containsKey(store.storedFilterController.text)
                             ? store.deleteFilter
                             : null,
                         child: Text('Delete'),
@@ -189,6 +188,7 @@ class GameListView extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
             ],
             // ),
           );
@@ -380,14 +380,12 @@ class _GameList extends StatelessWidget {
         itemBuilder: (BuildContext context, int index) {
           final item = items[index];
           return InkWell(
+            key: Key(item.path),
             onTap: onTap(item),
             child: Column(
               children: [
                 Expanded(
-                  child: Image.file(
-                    File(store.imagePath(item)),
-                    errorBuilder: imageAssetErrorBuilder(store.imagePath(item)),
-                  ),
+                  child: GameImage(game: item),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -452,19 +450,14 @@ class _GameList extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (BuildContext context, int index) {
               final item = items[index];
-              final imagePath = store.imagePath(item);
               return InkWell(
+                key: Key(item.path),
                 onTap: onTap(item),
                 child: Row(
                   children: [
                     SizedBox(
                       width: imageWidth,
-                      child: Image.file(
-                        width: imageWidth,
-                        File(imagePath),
-                        errorBuilder:
-                            imageAssetErrorBuilder(store.imagePath(item)),
-                      ),
+                      child: GameImage(width: imageWidth, game: item),
                     ),
                     Expanded(
                       child: Padding(
