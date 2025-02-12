@@ -20,9 +20,11 @@ dependencies:
   compression_rs: ^0.0.1
   file_picker: ^8.1.4
   xml: ^6.5.0
+  file_system_access:
+    path: /Users/juanmanuelcastillo/Desktop/flutter/file_system_access
   json_form:
     git: https://github.com/juancastillo0/json_form.git
-
+  shared_preferences: ^2.5.1
 
 dev_dependencies:
   flutter_test:
@@ -39,3 +41,4 @@ flutter:
   assets:
     # Add assets from the images directory to the application.
     - assets/images/
+    - packages/file_system_access/assets/file_persistence.js
