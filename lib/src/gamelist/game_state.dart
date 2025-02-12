@@ -1,31 +1,43 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:convert';
 
 import 'package:context_plus/context_plus.dart';
 import 'package:eset/src/base_ui.dart' show TextEditingController;
+import 'package:eset/src/gamelist/game_data.dart';
 import 'package:eset/src/gamelist/game_model.dart';
 import 'package:eset/src/gamelist/playnite.dart';
 import 'package:eset/src/system_collection/game_filter_model.dart';
 import 'package:eset/src/system_collection/system_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:json_form/json_form.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:file_system_access/file_system_access.dart' as fsa;
 import 'package:xml/xml.dart';
 
 class GameListStore extends ChangeNotifier {
-  final List<Game> allGames = [];
-  List<Game> games = [];
-  String? _selectedGamePath;
-  final bool isLoading;
-  final bool hasError;
-
-  GameListStore({
-    this.isLoading = false,
-    this.hasError = false,
-  }) {
+  GameListStore() {
+    _loadState();
     _loadGames();
     filterController = JsonFormController(initialData: {});
+
+    Timer? saveStateTimer;
+    addListener(() {
+      saveStateTimer ??= Timer(
+        const Duration(seconds: 5),
+        () {
+          saveState();
+          saveStateTimer = null;
+        },
+      );
+    });
   }
 
+  static final ref = Ref<GameListStore>();
+
+  final List<Game> allGames = [];
+  List<Game> games = [];
+
+  String? _selectedGamePath;
   String? get selectedGamePath => _selectedGamePath;
   set selectedGamePath(String? selectedGamePath) {
     _selectedGamePath = selectedGamePath;
@@ -38,29 +50,15 @@ class GameListStore extends ChangeNotifier {
         : allGames.firstWhere((game) => game.path == selectedGamePath);
   }
 
-  static final ref = Ref<GameListStore>();
-
+  ///
+  /// COMPUTED
+  ///
+  Map<String, List<String>> collections = {};
+  Map<String, List<String>> gameToCollection = {};
   Set<String> genres = {};
   Set<String> developers = {};
   Set<String> publishers = {};
   Set<String> systems = {};
-  bool isGridView = false;
-
-  final downloadedMediaPath = TextEditingController(
-    text: defaultTargetPlatform == TargetPlatform.windows
-        ? 'D:/Emulation/storage/downloaded_media'
-        : '/Volumes/KINGSTON/games/Emulation/storage/downloaded_media',
-  );
-  final esDeAppDataConfigPath = TextEditingController(
-    text: defaultTargetPlatform == TargetPlatform.windows
-        ? 'F:/games/Emulation/ES-DE'
-        : '/Volumes/KINGSTON/games/Emulation/ES-DE',
-  );
-
-  final playniteLibraryPathController = TextEditingController(
-    text: '/Volumes/KINGSTON/games/Playnite/library/',
-  );
-  String get playniteLibraryPath => playniteLibraryPathController.text;
 
   JsonFormController? _filterController;
   JsonFormController get filterController => _filterController!;
@@ -84,21 +82,43 @@ class GameListStore extends ChangeNotifier {
     );
   }
 
-  bool showFilter = false;
+  TextEditingController get downloadedMediaPath =>
+      paths.downloadedMediaPath.controller;
+  TextEditingController get esDeAppDataConfigPath =>
+      paths.esDeAppDataConfigPath.controller;
+  TextEditingController get playniteLibraryPath =>
+      paths.playniteLibraryPath.controller;
+
+  ///
+  /// DATA
+  ///
+  GameListPaths paths = GameListPaths();
+
+  final storedFilterController = TextEditingController();
   Map<String, GameFilter> storedFilters = {};
-  Map<String, List<String>> collections = {};
-  Map<String, List<String>> gameToCollection = {};
-  final storedFilterTextController = TextEditingController();
-
+  bool showFilter = false; // TODO: proper responsive handling
+  bool isGridView = false;
   SystemImageAsset imageAssetType = SystemImageAsset.covers;
-
   bool isFiltering = false;
-
   double _imageWidth = 120;
   double get imageWidth => _imageWidth;
   set imageWidth(double imageWith) {
     _imageWidth = imageWith;
     notifyListeners();
+  }
+
+  GameListData toData() {
+    return GameListData(
+      selectedGamePath: selectedGamePath,
+      paths: paths,
+      storedFilter: storedFilterController.text,
+      storedFilters: storedFilters,
+      showFilter: showFilter,
+      isGridView: isGridView,
+      imageAssetType: imageAssetType,
+      isFiltering: isFiltering,
+      imageWidth: imageWidth,
+    );
   }
 
   String imagePath(Game item, {SystemImageAsset? imageAsset}) {
@@ -108,7 +128,7 @@ class GameListStore extends ChangeNotifier {
         (element) => type == SystemImageAsset.marquees
             ? !element.endsWith('.jpg')
             : element.endsWith('.jpg'),
-        orElse: () => '${playniteLibraryPath}files/${item.path}/image.png',
+        orElse: () => '${playniteLibraryPath.text}files/${item.path}/image.png',
       );
     }
     final a = type.name.replaceFirst(r'$', '');
@@ -121,34 +141,122 @@ class GameListStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  static const _sharedPreferenceKey = 'games_store';
+
+  Future<void> saveState() async {
+    final data = jsonEncode(toData().toJson());
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_sharedPreferenceKey, data);
+  }
+
+  void _loadState() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final storeData = prefs.getString(_sharedPreferenceKey);
+    if (storeData != null) {
+      final data = GameListData.fromJson(
+        jsonDecode(storeData) as Map<String, dynamic>,
+      );
+
+      if (data.selectedGamePath != null) {
+        selectedGamePath = data.selectedGamePath;
+      }
+      if (data.paths != null) {
+        paths = data.paths!;
+      }
+      if (data.storedFilter != null) {
+        storedFilterController.text = data.storedFilter!;
+      }
+      if (data.storedFilters != null) {
+        storedFilters = data.storedFilters!;
+      }
+      if (data.showFilter != null) {
+        showFilter = data.showFilter!;
+      }
+      if (data.isGridView != null) {
+        isGridView = data.isGridView!;
+      }
+      if (data.imageAssetType != null) {
+        imageAssetType = data.imageAssetType!;
+      }
+      if (data.isFiltering != null) {
+        isFiltering = data.isFiltering!;
+      }
+      if (data.imageWidth != null) {
+        imageWidth = data.imageWidth!;
+      }
+      notifyListeners();
+    }
+  }
+
   void _loadGames() async {
+    allGames.clear();
     final systemList = [('ps2', _gamelistPs2), ('genesis', _gamesXml)];
 
-    final gamelistsDir = Directory('${esDeAppDataConfigPath.text}/gamelists');
-    if (gamelistsDir.existsSync()) {
+    fsa.FileSystemDirectoryHandle? gamelistsDir;
+    fsa.FileSystemDirectoryHandle? collectionsDir;
+    if (kIsWeb) {
+		// TODO: abstract persistence
+      final p = await fsa.FileSystem.instance.getPersistance();
+
+      final esDeItem = paths.esDeAppDataConfigPath.persistedId == null
+          ? null
+          : p.get(paths.esDeAppDataConfigPath.persistedId!);
+      final esDeHandle = esDeItem?.handle;
+      if (esDeHandle is fsa.FileSystemDirectoryHandle) {
+        paths.esDeAppDataConfigPath.handle = esDeHandle;
+        gamelistsDir =
+            (await esDeHandle.getDirectoryHandle('gamelists')).okOrNull;
+        collectionsDir =
+            (await esDeHandle.getDirectoryHandle('collections')).okOrNull;
+      }
+
+      final downloadedMediaItem = paths.downloadedMediaPath.persistedId == null
+          ? null
+          : p.get(paths.downloadedMediaPath.persistedId!);
+      final downloadedMediaHandle = downloadedMediaItem?.handle;
+      if (downloadedMediaHandle is fsa.FileSystemDirectoryHandle) {
+        paths.downloadedMediaPath.handle = downloadedMediaHandle;
+      }
+    } else {
+      paths.esDeAppDataConfigPath.handle = fsa.FileSystem.instance
+              .getIoNativeHandleFromPath(esDeAppDataConfigPath.text)
+          as fsa.FileSystemDirectoryHandle?;
+      gamelistsDir = fsa.FileSystem.instance.getIoNativeHandleFromPath(
+        '${esDeAppDataConfigPath.text}/gamelists',
+      ) as fsa.FileSystemDirectoryHandle?;
+      collectionsDir = fsa.FileSystem.instance.getIoNativeHandleFromPath(
+        '${esDeAppDataConfigPath.text}/collections',
+      ) as fsa.FileSystemDirectoryHandle?;
+
+      paths.downloadedMediaPath.handle = fsa.FileSystem.instance
+              .getIoNativeHandleFromPath(downloadedMediaPath.text)
+          as fsa.FileSystemDirectoryHandle?;
+    }
+
+    if (gamelistsDir != null) {
       systemList.clear();
-      await for (final dir in gamelistsDir.list()) {
-        if (dir is Directory) {
-          final f = File.fromUri(dir.uri.resolve('gamelist.xml'));
-          if (!await f.exists()) continue;
-          final xml = await f.readAsString();
-          systemList.add(
-            (dir.uri.pathSegments[dir.uri.pathSegments.length - 2], xml),
-          );
+      await for (final dir in gamelistsDir.entries()) {
+        if (dir is fsa.FileSystemDirectoryHandle) {
+          final f = await dir.getFileHandle('gamelist.xml');
+          if (f is! fsa.Ok<fsa.FileSystemFileHandle, fsa.GetHandleError>) {
+            continue;
+          }
+          final xmlFile = await f.value.getFile();
+          final xml = await xmlFile.readAsString();
+          systemList.add((dir.name, xml));
         }
       }
       notifyListeners();
     }
 
-    final collectionsDir =
-        Directory('${esDeAppDataConfigPath.text}/collections');
-    if (collectionsDir.existsSync()) {
-      await for (final file in collectionsDir.list()) {
-        if (file is File &&
-            file.path.endsWith('.cfg') &&
-            !file.uri.pathSegments.last.startsWith('.')) {
-          final collectionText = await file.readAsString();
-          String name = file.uri.pathSegments.last;
+    if (collectionsDir != null) {
+      await for (final file in collectionsDir.entries()) {
+        if (file is fsa.FileSystemFileHandle &&
+            file.name.endsWith('.cfg') &&
+            !file.name.startsWith('.')) {
+          final collectionFile = await file.getFile();
+          final collectionText = await collectionFile.readAsString();
+          String name = file.name;
           name = name.substring(0, name.length - 4); // remove .cfg
           if (name.startsWith('custom-')) {
             name = name.substring(7);
@@ -185,39 +293,75 @@ class GameListStore extends ChangeNotifier {
       );
     }
 
-    final playniteDb = File('${playniteLibraryPath}games.db');
-    final companiesDb = File('${playniteLibraryPath}companies.db');
-    final genresDb = File('${playniteLibraryPath}genres.db');
-    if (playniteDb.existsSync()) {
-      final bytes = await playniteDb.readAsBytes();
-      final companiesBytes =
-          await companiesDb.exists() ? await companiesDb.readAsBytes() : null;
-      final genresBytes =
-          await genresDb.exists() ? await genresDb.readAsBytes() : null;
+    fsa.FileSystemFileHandle? playniteDb;
+    fsa.FileSystemFileHandle? companiesDb;
+    fsa.FileSystemFileHandle? genresDb;
+    fsa.FileSystemDirectoryHandle? playniteFiles;
+    if (kIsWeb) {
+      final p = await fsa.FileSystem.instance.getPersistance();
 
-      final playniteFiles = Directory('${playniteLibraryPath}files/');
+      final playniteItem = paths.playniteLibraryPath.persistedId == null
+          ? null
+          : p.get(paths.playniteLibraryPath.persistedId!);
+      final playniteHandle = playniteItem?.handle;
+      if (playniteHandle is fsa.FileSystemDirectoryHandle) {
+        paths.playniteLibraryPath.handle = playniteHandle;
+        playniteDb = (await playniteHandle.getFileHandle('games.db')).okOrNull;
+        companiesDb =
+            (await playniteHandle.getFileHandle('companies.db')).okOrNull;
+        playniteDb = (await playniteHandle.getFileHandle('genres.db')).okOrNull;
+        playniteFiles =
+            (await playniteHandle.getDirectoryHandle('files')).okOrNull;
+      }
+    } else {
+      final p = playniteLibraryPath.text;
+      paths.playniteLibraryPath.handle = fsa.FileSystem.instance
+          .getIoNativeHandleFromPath(p) as fsa.FileSystemDirectoryHandle?;
+      playniteDb = fsa.FileSystem.instance.getIoNativeHandleFromPath(
+        '${p}games.db',
+      ) as fsa.FileSystemFileHandle?;
+      companiesDb = fsa.FileSystem.instance.getIoNativeHandleFromPath(
+        '${p}companies.db',
+      ) as fsa.FileSystemFileHandle?;
+      genresDb = fsa.FileSystem.instance.getIoNativeHandleFromPath(
+        '${p}genres.db',
+      ) as fsa.FileSystemFileHandle?;
+      playniteFiles = fsa.FileSystem.instance.getIoNativeHandleFromPath(
+        '${p}files',
+      ) as fsa.FileSystemDirectoryHandle?;
+    }
+    if (playniteDb != null) {
+      final bytes = await (await playniteDb.getFile()).readAsBytes();
+      final companiesBytes = companiesDb != null
+          ? await (await companiesDb.getFile()).readAsBytes()
+          : null;
+      final genresBytes = genresDb != null
+          ? await (await genresDb.getFile()).readAsBytes()
+          : null;
+
       final gameToAssets = <String, List<String>>{};
-      if (playniteFiles.existsSync()) {
-        final assetsList = await playniteFiles.list(recursive: true).toList();
-        for (final asset in assetsList) {
-          if (asset is File &&
-              !asset.uri.pathSegments.last.startsWith('.') &&
-              const [
-                'ico',
-                'png',
-                'jpg',
-                'jpeg',
-                'gif',
-                'bmp',
-                'svg',
-              ].contains(
-                  asset.path.substring(asset.path.lastIndexOf('.') + 1))) {
-            gameToAssets
-                .putIfAbsent(
-                  asset.uri.pathSegments[asset.uri.pathSegments.length - 2],
-                  () => [],
-                )
-                .add(asset.path);
+      if (playniteFiles != null) {
+        final assetsList = await playniteFiles.entries().toList();
+        for (final assetDir in assetsList) {
+          if (assetDir is! fsa.FileSystemDirectoryHandle) continue;
+          await for (final asset in assetDir.entries()) {
+            if (asset is fsa.FileSystemFileHandle &&
+                !asset.name.startsWith('.') &&
+                const [
+                  'ico',
+                  'png',
+                  'jpg',
+                  'jpeg',
+                  'gif',
+                  'bmp',
+                  'svg',
+                ].contains(
+                  asset.name.substring(asset.name.lastIndexOf('.') + 1),
+                )) {
+              gameToAssets
+                  .putIfAbsent(assetDir.name, () => [])
+                  .add('${assetDir.name}/${asset.name}');
+            }
           }
         }
       }
@@ -239,7 +383,7 @@ class GameListStore extends ChangeNotifier {
       if (g.publisher != null) publishers.add(g.publisher!);
       if (g.developer != null) developers.add(g.developer!);
     }
-    games = allGames;
+    filterGames();
   }
 
   void toggleListGridView() {
@@ -252,7 +396,7 @@ class GameListStore extends ChangeNotifier {
   void filterGames({bool store = false}) {
     final gameFilter = GameFilter.fromJson(filterController.submit() as Map);
     if (store) {
-      storedFilters[storedFilterTextController.text.trim()] = gameFilter;
+      storedFilters[storedFilterController.text.trim()] = gameFilter;
     }
     _applyFilter(gameFilter);
   }
@@ -294,8 +438,29 @@ class GameListStore extends ChangeNotifier {
   }
 
   void deleteFilter() {
-    storedFilters.remove(storedFilterTextController.text);
+    storedFilters.remove(storedFilterController.text);
     notifyListeners();
+  }
+
+  Future<void> selectDirectory(GameListPath path) async {
+    final result = await fsa.FileSystem.instance.showDirectoryPicker();
+    if (result != null) {
+      await path.setHandle(result);
+      final dmPath = paths.downloadedMediaPath;
+      if (path == paths.esDeAppDataConfigPath && dmPath.handle == null) {
+        final downloadedMediaDir =
+            (await result.getDirectoryHandle('downloaded_media')).okOrNull;
+        if (downloadedMediaDir != null) {
+          await dmPath.setHandle(downloadedMediaDir);
+        }
+      }
+      if (path == paths.esDeAppDataConfigPath ||
+          path == paths.playniteLibraryPath) {
+        _loadGames();
+      } else {
+        notifyListeners();
+      }
+    }
   }
 }
 

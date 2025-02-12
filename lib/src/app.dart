@@ -33,7 +33,7 @@ class MyApp extends StatelessWidget {
           // returns to the app after it has been killed while running in the
           // background.
           restorationScopeId: 'app',
-
+          debugShowCheckedModeBanner: false,
           // Provide the generated AppLocalizations to the MaterialApp. This
           // allows descendant Widgets to display the correct translations
           // depending on the user's locale.
@@ -75,7 +75,7 @@ class MyApp extends StatelessWidget {
                     return const SampleItemDetailsView();
                   case SampleItemListView.routeName:
                     return const SampleItemListView();
-                  
+
                   case GameDetailsView.routeName:
                     return const GameDetailsView();
                   case GameListView.routeName:
