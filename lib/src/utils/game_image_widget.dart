@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:io';
 
 import 'package:eset/src/gamelist/game_details_view.dart';
@@ -30,7 +31,7 @@ class _GameImageState extends State<GameImage> {
   Uint8List? imageBytes;
   bool isLoading = false;
   late GameListStore store;
-  late String path;
+  String? path;
 
   static final Map<String, (DateTime, Uint8List)> _imageCache = {};
 
@@ -40,43 +41,70 @@ class _GameImageState extends State<GameImage> {
     _setupImage();
   }
 
+  void validateCache() {
+    if (_imageCache.length > 100) {
+      final now = DateTime.now();
+      _imageCache
+          .removeWhere((key, value) => now.difference(value.$1).inMinutes > 5);
+      if (_imageCache.length > 100) {
+        final keys = SplayTreeMap<DateTime, String>.from(
+          _imageCache.map((k, v) => MapEntry(v.$1, k)),
+        ).values.take(50).toSet();
+        _imageCache.removeWhere((k, _) => !keys.contains(k));
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    store.removeListener(_setupImage);
+  }
+
   Future<void> _setupImage() async {
     store = GameListStore.ref.of(context);
+    if (path == null) store.addListener(_setupImage);
+
+    final previousPath = path;
     path = store.imagePath(widget.game, imageAsset: widget.imageAsset);
 
-    if (kIsWeb && imageBytes == null && !isLoading) {
+    if (kIsWeb && (imageBytes == null || path != previousPath) && !isLoading) {
+      final newPath = path!;
       try {
-        final cached = _imageCache[path];
+        final cached = _imageCache[newPath];
         if (cached != null) {
           imageBytes = cached.$2;
-          _imageCache[path] = (DateTime.now(), imageBytes!);
+          _imageCache[newPath] = (DateTime.now(), imageBytes!);
           return;
         }
         isLoading = true;
         final game = widget.game;
-        final a = (widget.imageAsset ?? store.imageAssetType)
-            .name
-            .replaceFirst(r'$', '');
-        final handle = store.paths.downloadedMediaPath.handle;
+        final isPlaynite = game.system == 'pc';
+        final handle = isPlaynite
+            ? store.paths.playniteLibraryPath.handle
+            : store.paths.downloadedMediaPath.handle;
         if (handle == null) return;
+        String prefix = isPlaynite
+            ? store.playniteLibraryPath.text
+            : store.downloadedMediaPath.text;
+        if (!prefix.endsWith('/')) prefix = '$prefix/';
 
-        final paths = '${game.system}/$a'.split('/');
-        FileSystemDirectoryHandle dir = handle;
-        for (final p in paths) {
-          final d = (await dir.getDirectoryHandle(p)).okOrNull;
-          if (d == null) return;
-          dir = d;
-        }
-        final fileResult = await dir.getFileHandle('${game.filename}.png');
+        final fileResult = await handle.getNestedFileHandle(
+          newPath.substring(newPath.lastIndexOf(prefix) + prefix.length),
+        );
         final file = fileResult.okOrNull;
         if (file != null) {
           imageBytes = await (await file.getFile()).readAsBytes();
-          _imageCache[path] = (DateTime.now(), imageBytes!);
+          _imageCache[newPath] = (DateTime.now(), imageBytes!);
+          validateCache();
         }
       } finally {
         if (mounted) {
           setState(() {
             isLoading = false;
+            if (newPath != path) {
+              _setupImage();
+            }
           });
         }
       }
@@ -85,7 +113,7 @@ class _GameImageState extends State<GameImage> {
 
   @override
   Widget build(BuildContext context) {
-    final errorBuilder = widget.errorBuilder ?? imageAssetErrorBuilder(path);
+    final errorBuilder = widget.errorBuilder ?? imageAssetErrorBuilder(path!);
     if (kIsWeb) {
       if (isLoading) {
         return Center(child: const CircularProgressIndicator());
@@ -103,7 +131,7 @@ class _GameImageState extends State<GameImage> {
       );
     }
     return Image.file(
-      File(path),
+      File(path!),
       width: widget.width,
       errorBuilder: errorBuilder,
     );

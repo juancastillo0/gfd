@@ -12,6 +12,7 @@ import 'package:flutter/foundation.dart';
 import 'package:json_form/json_form.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_system_access/file_system_access.dart' as fsa;
+import 'package:flutter/services.dart';
 import 'package:xml/xml.dart';
 
 class GameListStore extends ChangeNotifier {
@@ -21,6 +22,8 @@ class GameListStore extends ChangeNotifier {
     filterController = JsonFormController(initialData: {});
 
     Timer? saveStateTimer;
+
+    ServicesBinding.instance.keyboard.addHandler(_onKey);
     addListener(() {
       saveStateTimer ??= Timer(
         const Duration(seconds: 5),
@@ -32,11 +35,59 @@ class GameListStore extends ChangeNotifier {
     });
   }
 
+  bool shiftPressed = false;
+  bool controlPressed = false;
+
+  bool _onKey(KeyEvent event) {
+    if ({
+      LogicalKeyboardKey.shift,
+      LogicalKeyboardKey.shiftLeft,
+      LogicalKeyboardKey.shiftRight,
+    }.contains(event.logicalKey)) {
+      if (event is KeyDownEvent || event is KeyRepeatEvent) {
+        shiftPressed = true;
+      } else if (event is KeyUpEvent) {
+        shiftPressed = false;
+      }
+      notifyListeners();
+    } else if ({
+      LogicalKeyboardKey.control,
+      LogicalKeyboardKey.controlLeft,
+      LogicalKeyboardKey.controlRight,
+    }.contains(event.logicalKey)) {
+      if (event is KeyDownEvent || event is KeyRepeatEvent) {
+        controlPressed = true;
+      } else if (event is KeyUpEvent) {
+        controlPressed = false;
+      }
+      notifyListeners();
+    } else if (event is KeyDownEvent && event.character == 'f') {
+      if (controlPressed) {
+        filterController.retrieveField('name')!.focusNode.requestFocus();
+      }
+    } else if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.f1) {
+      showFilter = !showFilter;
+      notifyListeners();
+    } else if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.f2) {
+      isSelectingGames = !isSelectingGames;
+      notifyListeners();
+    }
+
+    return false;
+  }
+
   static final ref = Ref<GameListStore>();
 
   final List<Game> allGames = [];
   List<Game> games = [];
+  final _errorsStreamController = StreamController<String>.broadcast();
+  Stream<String> get errorsStream => _errorsStreamController.stream;
+  final _messagesStreamController = StreamController<String>.broadcast();
+  Stream<String> get messagesStream => _messagesStreamController.stream;
 
+  String? selectedCollection;
   String? _selectedGamePath;
   String? get selectedGamePath => _selectedGamePath;
   set selectedGamePath(String? selectedGamePath) {
@@ -99,13 +150,17 @@ class GameListStore extends ChangeNotifier {
   bool showFilter = false; // TODO: proper responsive handling
   bool isGridView = false;
   SystemImageAsset imageAssetType = SystemImageAsset.covers;
-  bool isFiltering = false;
+  bool isFiltering = true;
   double _imageWidth = 120;
+  Set<Game> selectedGames = {};
+  bool isSelectingGames = false;
   double get imageWidth => _imageWidth;
   set imageWidth(double imageWith) {
     _imageWidth = imageWith;
     notifyListeners();
   }
+
+  static const customCollectionPrefix = 'custom-';
 
   GameListData toData() {
     return GameListData(
@@ -123,16 +178,26 @@ class GameListStore extends ChangeNotifier {
 
   String imagePath(Game item, {SystemImageAsset? imageAsset}) {
     final type = (imageAsset ?? imageAssetType);
+    String dirPath = item.system == 'pc'
+        ? playniteLibraryPath.text
+        : downloadedMediaPath.text;
+    if (!dirPath.endsWith('/')) dirPath = '$dirPath/';
+
     if (item.system == 'pc') {
-      return item.playniteAssets!.firstWhere(
+      final l = type == SystemImageAsset.screenshots
+          ? item.playniteAssets!.reversed
+          : item.playniteAssets!;
+      return l.firstWhere(
         (element) => type == SystemImageAsset.marquees
             ? !element.endsWith('.jpg')
             : element.endsWith('.jpg'),
-        orElse: () => '${playniteLibraryPath.text}files/${item.path}/image.png',
+        orElse: () {
+          return '${dirPath}files/${item.path}/image.png';
+        },
       );
     }
     final a = type.name.replaceFirst(r'$', '');
-    return '${downloadedMediaPath.text}/${item.system}/$a/${item.filename}.png';
+    return '$dirPath${item.system}/$a/${item.filename}.png';
   }
 
   void changeImageAsset(SystemImageAsset? imageAssetType) {
@@ -195,7 +260,7 @@ class GameListStore extends ChangeNotifier {
     fsa.FileSystemDirectoryHandle? gamelistsDir;
     fsa.FileSystemDirectoryHandle? collectionsDir;
     if (kIsWeb) {
-		// TODO: abstract persistence
+      // TODO: abstract persistence
       final p = await fsa.FileSystem.instance.getPersistance();
 
       final esDeItem = paths.esDeAppDataConfigPath.persistedId == null
@@ -243,7 +308,7 @@ class GameListStore extends ChangeNotifier {
           }
           final xmlFile = await f.value.getFile();
           final xml = await xmlFile.readAsString();
-          systemList.add((dir.name, xml));
+          systemList.add((dir.name.split('/').last, xml));
         }
       }
       notifyListeners();
@@ -258,8 +323,8 @@ class GameListStore extends ChangeNotifier {
           final collectionText = await collectionFile.readAsString();
           String name = file.name;
           name = name.substring(0, name.length - 4); // remove .cfg
-          if (name.startsWith('custom-')) {
-            name = name.substring(7);
+          if (name.startsWith(customCollectionPrefix)) {
+            name = name.substring(customCollectionPrefix.length);
           }
           collections[name] = collectionText.split('\n');
         }
@@ -346,7 +411,7 @@ class GameListStore extends ChangeNotifier {
           if (assetDir is! fsa.FileSystemDirectoryHandle) continue;
           await for (final asset in assetDir.entries()) {
             if (asset is fsa.FileSystemFileHandle &&
-                !asset.name.startsWith('.') &&
+                !asset.filename.startsWith('.') &&
                 const [
                   'ico',
                   'png',
@@ -359,8 +424,8 @@ class GameListStore extends ChangeNotifier {
                   asset.name.substring(asset.name.lastIndexOf('.') + 1),
                 )) {
               gameToAssets
-                  .putIfAbsent(assetDir.name, () => [])
-                  .add('${assetDir.name}/${asset.name}');
+                  .putIfAbsent(assetDir.filename, () => [])
+                  .add('${assetDir.name}/${asset.filename}');
             }
           }
         }
@@ -407,8 +472,7 @@ class GameListStore extends ChangeNotifier {
           (g) => gameFilter.applies(
             g,
             // remove "./" from path
-            gameToCollection['%ROMPATH%/${g.system}/${g.path.substring(2)}'] ??
-                const [],
+            gameToCollection[g.romPath] ?? const [],
           ),
         )
         .toList();
@@ -462,6 +526,81 @@ class GameListStore extends ChangeNotifier {
       }
     }
   }
+
+  void toggleSelectingGames() {
+    if (isSelectingGames) {
+      selectedGames.clear();
+    }
+    isSelectingGames = !isSelectingGames;
+    notifyListeners();
+  }
+
+  void selectGame(Game item) {
+    if (selectedGames.contains(item)) {
+      selectedGames.remove(item);
+    } else {
+      selectedGames.add(item);
+    }
+    isSelectingGames = true;
+    notifyListeners();
+  }
+
+  void updateSelectedGames(SelectedGamesAction action) {
+    switch (action) {
+      case SelectedGamesAction.selectAll:
+        selectedGames = Set.from(games);
+      case SelectedGamesAction.clearSelection:
+        selectedGames.clear();
+      case SelectedGamesAction.invertSelection:
+        if (selectedGames.isEmpty) {
+          selectedGames = Set.from(games);
+        } else if (selectedGames.length == games.length) {
+          selectedGames.clear();
+        } else {
+          selectedGames =
+              games.where((g) => !selectedGames.contains(g)).toSet();
+        }
+      default:
+    }
+    notifyListeners();
+  }
+
+  void selectCollection(String collection) {
+    selectedCollection = collection;
+    notifyListeners();
+  }
+}
+
+extension FileSystemHandleName on fsa.FileSystemHandle {
+  String get filename => name.substring(
+        name.lastIndexOf(RegExp(r'[/\\].')) + 1,
+        name.endsWith('/') ? name.length - 1 : null,
+      );
+}
+
+extension FileSystemHandleDir on fsa.FileSystemDirectoryHandle {
+  Future<fsa.Result<fsa.FileSystemFileHandle, fsa.GetHandleError>>
+      getNestedFileHandle(String path) async {
+    final paths = path.split('/');
+    fsa.FileSystemDirectoryHandle dir = this;
+    for (final p in paths.sublist(0, paths.length - 1)) {
+      final d = await dir.getDirectoryHandle(p);
+      if (d is! fsa.Ok<fsa.FileSystemDirectoryHandle, fsa.GetHandleError>) {
+        return fsa.Err(d.errOrNull!);
+      }
+      dir = d.value;
+    }
+    return dir.getFileHandle(paths.last);
+  }
+}
+
+enum SelectedGamesAction {
+  addToCollection,
+  removeFromCollection,
+  changeFileExtension,
+  selectAll,
+  clearSelection,
+  invertSelection,
 }
 
 // C:\Users\jmanu\EmuDeck\EmulationStation-DE\ES-DE\gamelists

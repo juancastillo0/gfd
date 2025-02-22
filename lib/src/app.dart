@@ -1,3 +1,6 @@
+import 'package:eset/src/base_ui.dart';
+import 'package:eset/src/collections/collection_list_view.dart';
+import 'package:eset/src/collections/collection_detail_view.dart';
 import 'package:eset/src/gamelist/game_details_view.dart';
 import 'package:eset/src/gamelist/game_list_view.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +23,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appBarTheme = const AppBarTheme(
+      toolbarHeight: 42,
+    );
+    final inputDecorationTheme = InputDecorationTheme(
+      border: const UnderlineInputBorder(),
+      filled: true,
+      fillColor: Colors.grey.withValues(alpha: 0.1),
+    );
     // Glue the SettingsController to the MaterialApp.
     //
     // The ListenableBuilder Widget listens to the SettingsController for changes.
@@ -58,8 +69,25 @@ class MyApp extends StatelessWidget {
           // Define a light and dark color theme. Then, read the user's
           // preferred ThemeMode (light, dark, or system default) from the
           // SettingsController to display the correct theme.
-          theme: ThemeData(),
-          darkTheme: ThemeData.dark(),
+          theme: ThemeData(
+            useMaterial3: true,
+            appBarTheme: appBarTheme,
+            inputDecorationTheme: inputDecorationTheme,
+            colorScheme: ColorScheme.light(
+              primary: Colors.blueAccent,
+              surfaceContainerHighest: Colors.blueAccent.withValues(alpha: 0.1),
+            ),
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            appBarTheme: appBarTheme,
+            inputDecorationTheme: inputDecorationTheme,
+            colorScheme: ColorScheme.dark(
+              primary: Colors.blueAccent,
+              surfaceContainerHighest: Colors.blueAccent.withValues(alpha: 0.1),
+              onSurface: Colors.white.withValues(alpha: 0.75),
+            ),
+          ),
           themeMode: settingsController.themeMode,
 
           // Define a function to handle named routes in order to support
@@ -76,11 +104,15 @@ class MyApp extends StatelessWidget {
                   case SampleItemListView.routeName:
                     return const SampleItemListView();
 
+                  case CollectionsListView.routeName:
+                    return const MainPage(tab: MainTab.collections);
+                  case CollectionDetailsView.routeName:
+                    return const CollectionDetailsView();
                   case GameDetailsView.routeName:
                     return const GameDetailsView();
                   case GameListView.routeName:
                   default:
-                    return const GameListView();
+                    return const MainPage(tab: MainTab.games);
                 }
               },
             );

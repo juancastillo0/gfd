@@ -1,13 +1,12 @@
 import 'package:context_plus/context_plus.dart';
+import 'package:eset/src/base_ui.dart';
 import 'package:eset/src/gamelist/game_model.dart';
 import 'package:eset/src/gamelist/game_state.dart';
 import 'package:eset/src/system_collection/game_filter_model.dart';
 import 'package:eset/src/system_collection/system_model.dart';
 import 'package:eset/src/utils/game_image_widget.dart';
-import 'package:flutter/material.dart';
 import 'package:json_form/json_form.dart';
 
-import '../settings/settings_view.dart';
 import 'game_details_view.dart';
 
 /// Displays a list of Games.
@@ -23,22 +22,10 @@ class GameListView extends StatelessWidget {
 
     final rootFilter = [
       const SizedBox(width: 10),
-      if (isBig)
-        Text(
-          'Filter',
-          style: Theme.of(context).textTheme.titleLarge,
-        )
-      else
-        TextButton.icon(
-          onPressed: store.toggleFilter,
-          label: Text(
-            'Filter',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          icon: store.isFiltering
-              ? Icon(Icons.filter_alt_off_rounded)
-              : Icon(Icons.filter_alt_rounded),
-        ),
+      Text(
+        'Filter',
+        style: Theme.of(context).textTheme.titleLarge,
+      ),
       Spacer(),
       DropdownMenu(
         controller: store.storedFilterController,
@@ -67,66 +54,73 @@ class GameListView extends StatelessWidget {
       ),
     ];
 
-    final filterWidget = SizedBox(
-      width: 350,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              ...rootFilter,
-              TextButton(
-                onPressed: store.storeFilter,
-                child: Text('Store'),
-              ),
-              Column(
-                children: [
-                  AnimatedBuilder(
-                    animation: store.storedFilterController,
-                    builder: (context, child) {
-                      return TextButton(
-                        onPressed: store.storedFilters
-                                .containsKey(store.storedFilterController.text)
-                            ? store.deleteFilter
-                            : null,
-                        child: Text('Delete'),
-                      );
-                    },
-                  ),
-                  TextButton(
-                    onPressed: store.clearFilter,
-                    child: Text('Clear'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Expanded(
-            child: JsonForm(
-              controller: store.filterController,
-              uiConfig: JsonFormUiConfig(
-                submitButtonBuilder: (onSubmit) => SizedBox(),
-              ),
-              jsonSchema: GameFilter.jsonSchema(
-                genres: store.genres,
-                systems: store.systems,
-                collections: store.collections.keys,
-                developers: store.developers,
-                publishers: store.publishers,
-              ),
-              onFormDataSaved: (data) => store.filterGames(),
+    final filterWidget = Column(
+      children: [
+        Row(
+          children: [
+            ...rootFilter,
+            Column(
+              children: [
+                TextButton(
+                  onPressed: store.storeFilter,
+                  child: Text('Store'),
+                ),
+                AnimatedBuilder(
+                  animation: store.storedFilterController,
+                  builder: (context, child) {
+                    return TextButton(
+                      onPressed: store.storedFilters
+                              .containsKey(store.storedFilterController.text)
+                          ? store.deleteFilter
+                          : null,
+                      child: Text('Delete'),
+                    );
+                  },
+                )
+              ],
             ),
+            Column(
+              children: [
+                TextButton(
+                  onPressed: store.toggleFilter,
+                  child: Text('Hide'),
+                ),
+                TextButton(
+                  onPressed: store.clearFilter,
+                  child: Text('Clear'),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Expanded(
+          child: JsonForm(
+            controller: store.filterController,
+            uiConfig: JsonFormUiConfig(
+              submitButtonBuilder: (onSubmit) => SizedBox(),
+            ),
+            jsonSchema: GameFilter.jsonSchema(
+              genres: store.genres,
+              systems: store.systems,
+              collections: store.collections.keys,
+              developers: store.developers,
+              publishers: store.publishers,
+            ),
+            onFormDataSaved: (data) => store.filterGames(),
           ),
-        ],
-      ),
+        ),
+      ],
     );
 
     void showCountsDialog() {
       final systemCount = <String, int>{};
       final genreCount = <String, int>{};
+      final extensionCount = <String, int>{};
       for (final g in store.games) {
         systemCount[g.system] = (systemCount[g.system] ?? 0) + 1;
         genreCount[g.genre ?? ''] = (genreCount[g.genre ?? ''] ?? 0) + 1;
+        extensionCount[g.extension] = (extensionCount[g.extension] ?? 0) + 1;
       }
       showDialog(
         context: context,
@@ -188,12 +182,96 @@ class GameListView extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Text(
+                  'Extensions',
+                  style: textTheme.titleLarge,
+                ),
+              ),
+              ...extensionCount.entries.map(
+                (e) => SimpleDialogOption(
+                  // TODO: filter by extension
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(e.key == '' ? 'None' : e.key),
+                      Text(e.value.toString()),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
             ],
             // ),
           );
         },
       );
+    }
+
+    void gameSelectionMenu(SelectedGamesAction action) {
+      switch (action) {
+        case SelectedGamesAction.addToCollection:
+        case SelectedGamesAction.removeFromCollection:
+          showDialog(
+            context: context,
+            builder: (context) => SimpleDialog(
+              title: Text('Select Collection'),
+              children: [
+                ...store.collections.keys.map(
+                  (c) => SimpleDialogOption(
+                    onPressed: () {
+                      store.updateSelectedGamesCollection(
+                        collection: c,
+                        add: action == SelectedGamesAction.addToCollection,
+                      );
+                    },
+                    child: Text(c),
+                  ),
+                )
+              ],
+            ),
+          );
+          break;
+        case SelectedGamesAction.changeFileExtension:
+          showDialog(
+            context: context,
+            builder: (context) {
+              String extension = '';
+              return AlertDialog(
+                content: TextFormField(
+                  decoration: InputDecoration(
+                    labelText: 'Extension',
+                  ),
+                  onChanged: (value) => extension = value,
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      if (extension.isEmpty) return;
+                      store.renameSelectedGamesExtension(extension);
+                      Navigator.pop(context);
+                    },
+                    child: Text('Rename'),
+                  ),
+                ],
+              );
+            },
+          );
+          break;
+
+        case SelectedGamesAction.selectAll:
+        case SelectedGamesAction.clearSelection:
+        case SelectedGamesAction.invertSelection:
+          store.updateSelectedGames(action);
+          break;
+      }
     }
 
     final gameListWidget = Column(
@@ -202,10 +280,88 @@ class GameListView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (!store.isFiltering)
+              TextButton.icon(
+                onPressed: store.toggleFilter,
+                icon: Icon(Icons.filter_alt_rounded),
+                label: Text('Filter'),
+              ),
             TextButton.icon(
               onPressed: showCountsDialog,
-              icon: Icon(Icons.info_outline_rounded),
+              icon: Icon(Icons.bar_chart),
               label: Text('${store.games.length} Games'),
+            ),
+            Column(
+              children: [
+                TextButton.icon(
+                  onPressed: store.toggleSelectingGames,
+                  icon: store.isSelectingGames
+                      ? Icon(Icons.cancel_outlined)
+                      : Icon(Icons.checklist_rounded),
+                  label: store.isSelectingGames
+                      ? Text('${store.selectedGames.length} Selected')
+                      : Text('Select'),
+                ),
+                if (store.isSelectingGames)
+                  PopupMenuButton<SelectedGamesAction>(
+                    itemBuilder: (context) => SelectedGamesAction.values
+                        .map(
+                          (a) => PopupMenuItem(
+                            value: a,
+                            enabled: store.selectedGames.isNotEmpty
+                                ? true
+                                : !const [
+                                    SelectedGamesAction.addToCollection,
+                                    SelectedGamesAction.removeFromCollection,
+                                    SelectedGamesAction.changeFileExtension,
+                                    SelectedGamesAction.clearSelection,
+                                  ].contains(a),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  const {
+                                    SelectedGamesAction.addToCollection:
+                                        Icons.add,
+                                    SelectedGamesAction.removeFromCollection:
+                                        Icons.remove,
+                                    SelectedGamesAction.changeFileExtension:
+                                        Icons.edit,
+                                    SelectedGamesAction.selectAll:
+                                        Icons.check_box,
+                                    SelectedGamesAction.clearSelection:
+                                        Icons.clear,
+                                    SelectedGamesAction.invertSelection:
+                                        Icons.swap_vert,
+                                  }[a],
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  a.name.replaceAllMapped(
+                                    RegExp('[a-z][A-Z]|^[a-z]'),
+                                    (a) => a.group(0)!.length == 1
+                                        ? a.group(0)!.toUpperCase()
+                                        : '${a.group(0)!.substring(0, 1)} ${a.group(0)!.substring(1)}',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onSelected: gameSelectionMenu,
+                    tooltip: 'Selection Actions',
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+                      child: Row(
+                        children: [
+                          Icon(Icons.more_horiz),
+                          const SizedBox(width: 10),
+                          Text('Actions'),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
             Container(
               padding: const EdgeInsets.all(12),
@@ -217,7 +373,9 @@ class GameListView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Image Width'),
-                      Text('${store.imageWidth.round()}'),
+                      Text(
+                        '${store.imageWidth.round() * (store.isGridView ? 2 : 1)}',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -277,28 +435,20 @@ class GameListView extends StatelessWidget {
     if (isBig) {
       body = Row(
         children: [
-          filterWidget,
-          Expanded(child: gameListWidget),
+          if (store.isFiltering)
+            SizedBox(
+              key: Key('filter'),
+              width: 370,
+              child: filterWidget,
+            ),
+          Expanded(key: Key('gameList'), child: gameListWidget),
         ],
       );
     } else {
       body = store.isFiltering ? filterWidget : gameListWidget;
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Games'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.restorablePushNamed(context, SettingsView.routeName);
-            },
-          ),
-        ],
-      ),
-      body: body,
-    );
+    return body;
   }
 }
 
@@ -312,9 +462,28 @@ class _GameList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = store.games;
+    if (items.isEmpty) {
+      final update = store.filterController.lastEvent;
+      String updateString = '';
+      if (update != null) {
+        updateString =
+            '\nLast Filter Update for "${update.field.idKey}": ${update.newValue}';
+      }
+      return Center(
+        child: Text(
+          'No games found.$updateString',
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
 
     VoidCallback onTap(Game item) => () {
+          if (store.shiftPressed || store.isSelectingGames) {
+            store.selectGame(item);
+            return;
+          }
           store.selectedGamePath = item.path;
+
           // Navigate to the details page. If the user leaves and returns to
           // the app after it has been killed while running in the
           // background, the navigation stack is restored.
@@ -379,24 +548,33 @@ class _GameList extends StatelessWidget {
         itemCount: items.length,
         itemBuilder: (BuildContext context, int index) {
           final item = items[index];
-          return InkWell(
-            key: Key(item.path),
-            onTap: onTap(item),
-            child: Column(
-              children: [
-                Expanded(
-                  child: GameImage(game: item),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    item.relativePath,
-                    style: Theme.of(context).textTheme.titleMedium,
+          return Container(
+            color: store.selectedGames.contains(item)
+                ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+                : null,
+            child: InkWell(
+              key: Key(item.path),
+              onTap: onTap(item),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: GameImage(game: item),
                   ),
-                ),
-                GameDataView(game: item, isSmall: true),
-                // Wrap(children: otherProps(item)),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      item.relativePath,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: GameDataView(game: item, isSmall: true),
+                  ),
+                  // Wrap(children: otherProps(item)),
+                ],
+              ),
             ),
           );
         },
@@ -450,27 +628,32 @@ class _GameList extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (BuildContext context, int index) {
               final item = items[index];
-              return InkWell(
-                key: Key(item.path),
-                onTap: onTap(item),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: imageWidth,
-                      child: GameImage(width: imageWidth, game: item),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(item.filename),
+              return Container(
+                color: store.selectedGames.contains(item)
+                    ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+                    : null,
+                child: InkWell(
+                  key: Key(item.path),
+                  onTap: onTap(item),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: imageWidth,
+                        child: GameImage(width: imageWidth, game: item),
                       ),
-                    ),
-                    SizedBox(
-                      width: extensionWith,
-                      child: Text(item.extension),
-                    ),
-                    ...otherProps(item),
-                  ],
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(item.filename),
+                        ),
+                      ),
+                      SizedBox(
+                        width: extensionWith,
+                        child: Text(item.extension),
+                      ),
+                      ...otherProps(item),
+                    ],
+                  ),
                 ),
               );
             },
