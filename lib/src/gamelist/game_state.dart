@@ -208,6 +208,162 @@ class GameListStore extends ChangeNotifier {
 
   static const _sharedPreferenceKey = 'games_store';
 
+  Future<void> renameSelectedGame(String newName) async {
+    final game = selectedGame;
+    if (game == null) return;
+    renameGames({game: newName});
+  }
+
+  Future<void> renameSelectedGamesExtension(String extension) async {
+    if (extension.isEmpty) return;
+    await renameGames(
+      Map.fromIterables(
+        selectedGames,
+        selectedGames.map((g) => '${g.filename}.$extension'),
+      ),
+    );
+  }
+
+  Future<void> renameGames(Map<Game, String> gamesToRename) async {
+    /// Validate Names
+    if (gamesToRename.isEmpty) return;
+    for (final MapEntry(key: gameToRename, :value) in gamesToRename.entries) {
+      if (value.isEmpty) {
+        return _errorsStreamController.add('A game filename cannot be empty.');
+      }
+      for (final g in allGames) {
+        if (g.system == gameToRename.system && g.filename == value) {
+          return _errorsStreamController.add('Duplicate name: "$value".');
+        }
+      }
+    }
+
+    /// Validate Paths and Permissions
+    final esDeHandle = paths.esDeAppDataConfigPath.handle;
+    if (esDeHandle == null) {
+      return _errorsStreamController.add(
+        'No ES-DE path configured in settings.'
+        ' Required for renaming gamelists and collections.',
+      );
+    }
+    final gamelistsDir =
+        (await esDeHandle.getDirectoryHandle('gamelists')).okOrNull;
+    if (gamelistsDir == null) {
+      return _errorsStreamController.add(
+        'No "gamelists" directory in ES-DE path.',
+      );
+    }
+    final pg = await gamelistsDir.requestPermission(
+      mode: fsa.FileSystemPermissionMode.readwrite,
+    );
+    if (pg != fsa.PermissionStateEnum.granted) return;
+    final collectionsDir =
+        (await esDeHandle.getDirectoryHandle('collections')).okOrNull;
+    if (collectionsDir == null) {
+      return _errorsStreamController.add(
+        'No "collections" directory in ES-DE path.',
+      );
+    }
+    final pc = await collectionsDir.requestPermission(
+      mode: fsa.FileSystemPermissionMode.readwrite,
+    );
+    if (pc != fsa.PermissionStateEnum.granted) return;
+
+    /// Retrieve Files to Edit
+    final systems = gamesToRename.keys.map((g) => g.system).toSet();
+    final collections = gamesToRename.keys
+        .expand((g) => gameToCollection[g.romPath] ?? const <String>[])
+        .toSet();
+
+    final gamelistsR = await Future.wait(systems.map(
+      (s) => gamelistsDir.getNestedFileHandle('$s/gamelist.xml'),
+    ));
+    final gamelists = gamelistsR
+        .map((g) => g.okOrNull)
+        .whereType<fsa.FileSystemFileHandle>()
+        .toList();
+    if (gamelists.length != systems.length) return;
+
+    final collectionListR = await Future.wait(collections.map(
+      (collection) => collectionsDir
+          .getFileHandle('$customCollectionPrefix$collection.cfg'),
+    ));
+    final collectionList = collectionListR
+        .map((g) => g.okOrNull)
+        .whereType<fsa.FileSystemFileHandle>()
+        .toList();
+    if (collectionList.length != collections.length) return;
+
+    /// Edit Files
+    Future<void> replaceInHandles(
+      List<fsa.FileSystemFileHandle> handles,
+      (Pattern, String) Function(Game g, String newName) mapper,
+    ) {
+      return Future.wait(handles.map((c) async {
+        String f = await (await c.getFile()).readAsString();
+        for (final e in gamesToRename.entries) {
+          final values = mapper(e.key, e.value);
+          f = f.replaceAll(values.$1, values.$2);
+        }
+        final w = await c.createWritable(keepExistingData: false);
+        await w.write(fsa.FileSystemWriteChunkType.string(f));
+        await w.close();
+      }));
+    }
+
+    await replaceInHandles(
+      collectionList,
+      (g, n) => (g.romPath, '%ROMPATH%/${g.system}/$n'),
+    );
+    await replaceInHandles(
+      gamelists,
+      (g, n) => ('<path>${g.path}</path>', '<path>./$n</path>'),
+    );
+  }
+
+  Future<void> updateSelectedGamesCollection({
+    required String collection,
+    required bool add,
+  }) async {
+    if (selectedGames.isEmpty) return;
+
+    final esDeHandle = paths.esDeAppDataConfigPath.handle;
+    if (esDeHandle == null) throw Exception('');
+
+    final collectionsDir =
+        (await esDeHandle.getDirectoryHandle('collections')).okOrNull!;
+    final collectionsFile = (await collectionsDir
+            .getFileHandle('$customCollectionPrefix$collection.cfg'))
+        .okOrNull;
+    if (collectionsFile == null) throw Exception('');
+
+    final p = await collectionsFile.requestPermission(
+      mode: fsa.FileSystemPermissionMode.readwrite,
+    );
+    if (p != fsa.PermissionStateEnum.granted) return;
+
+    final values = await (await collectionsFile.getFile()).readAsString();
+    final list = values.split('\n');
+
+    final toUpdate = selectedGames
+        .where((g) => g.system != 'pc')
+        .map((g) => g.romPath)
+        .where((path) => add ? list.contains(path) : !list.contains(path));
+    if (toUpdate.isNotEmpty) {
+      final Iterable<String> items;
+      if (add) {
+        items = toUpdate;
+      } else {
+        items = list.where(toUpdate.contains);
+      }
+      final w = await collectionsFile.createWritable(keepExistingData: add);
+      await w.write(
+        fsa.FileSystemWriteChunkType.string(items.join('\n')),
+      );
+      await w.close();
+    }
+  }
+
   Future<void> saveState() async {
     final data = jsonEncode(toData().toJson());
     final prefs = await SharedPreferences.getInstance();
