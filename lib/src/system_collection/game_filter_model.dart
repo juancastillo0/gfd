@@ -100,6 +100,7 @@ class GameFilter {
       order: json['order'] == null
           ? const []
           : (json['order'] as List)
+              .where((o) => o is Map && o['kind'] is String)
               .map((o) => GameOrder.fromJson(o as Map))
               .toList(),
     );
@@ -131,12 +132,9 @@ class GameFilter {
       final p = RegExp(pattern, caseSensitive: false);
       if (p.hasMatch(value)) return true;
     } catch (_) {}
-    return value
-        .trim()
-        .replaceAll(RegExp(r'[\s_-]'), ' ')
-        .toLowerCase()
-        .contains(
-          pattern.trim().toLowerCase().replaceAll(RegExp(r'[\s_-]'), ' '),
+    final toReplace = RegExp(r'[\s:,_-]+');
+    return value.trim().replaceAll(toReplace, ' ').toLowerCase().contains(
+          pattern.trim().toLowerCase().replaceAll(toReplace, ' '),
         );
   }
 
@@ -188,8 +186,8 @@ class GameOrder {
 
   factory GameOrder.fromJson(Map json) {
     return GameOrder(
-      kind: GameOrderKind.values.first, // byName(json['kind']),
-      isDesc: json['isDesc'],
+      kind: GameOrderKind.values.byName(json['kind']), // byName(json['kind']),
+      isDesc: json['isDesc'] ?? false,
     );
   }
 
