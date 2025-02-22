@@ -20,7 +20,7 @@ class GameDetailsView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Item Details'),
+        title: const Text('Game Details'),
       ),
       body: SingleChildScrollView(
         child: Padding(
