@@ -21,77 +21,99 @@ class SettingsView extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        // Glue the SettingsController to the theme selection DropdownButton.
-        //
-        // When a user selects a theme from the dropdown list, the
-        // SettingsController is updated, which rebuilds the MaterialApp.
-        child: Column(
-          children: [
-            DropdownButton<ThemeMode>(
-              // Read the selected themeMode from the controller
-              value: controller.themeMode,
-              // Call the updateThemeMode method any time the user selects a theme.
-              onChanged: controller.updateThemeMode,
-              items: const [
-                DropdownMenuItem(
-                  value: ThemeMode.system,
-                  child: Text('System Theme'),
-                ),
-                DropdownMenuItem(
-                  value: ThemeMode.light,
-                  child: Text('Light Theme'),
-                ),
-                DropdownMenuItem(
-                  value: ThemeMode.dark,
-                  child: Text('Dark Theme'),
-                )
-              ],
-            ),
-            TextFormField(
-              decoration: InputDecoration(
-                labelText: 'ES-DE App Data Path',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.folder),
-                  onPressed: () {
-                    gameStore.selectDirectory(
-                      gameStore.paths.esDeAppDataConfigPath,
-                    );
-                  },
-                ),
+      body: Center(
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: 600,
+          ),
+          padding: const EdgeInsets.all(16),
+          // Glue the SettingsController to the theme selection DropdownButton.
+          //
+          // When a user selects a theme from the dropdown list, the
+          // SettingsController is updated, which rebuilds the MaterialApp.
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            spacing: 10,
+            children: [
+              DropdownButton<ThemeMode>(
+                // Read the selected themeMode from the controller
+                value: controller.themeMode,
+                // Call the updateThemeMode method any time the user selects a theme.
+                onChanged: controller.updateThemeMode,
+                items: const [
+                  DropdownMenuItem(
+                    value: ThemeMode.system,
+                    child: Text('System Theme'),
+                  ),
+                  DropdownMenuItem(
+                    value: ThemeMode.light,
+                    child: Text('Light Theme'),
+                  ),
+                  DropdownMenuItem(
+                    value: ThemeMode.dark,
+                    child: Text('Dark Theme'),
+                  )
+                ],
               ),
-              controller: gameStore.esDeAppDataConfigPath,
-            ),
-            TextFormField(
-              decoration: InputDecoration(
-                labelText: 'Downloaded Media Path',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.folder),
-                  onPressed: () {
-                    gameStore.selectDirectory(
-                      gameStore.paths.downloadedMediaPath,
-                    );
-                  },
+              TextFormField(
+                decoration: InputDecoration(
+                  labelText: 'ES-DE App Data Path',
+                  helperText:
+                      'Path to the ES-DE App Data folder with the "gamelist" and "collections" folders.'
+                      ' If this has the "downloaded_media" folder we will use it as the Downloaded Media Path.',
+                  helperMaxLines: 5,
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.folder),
+                    tooltip: 'Select the ES-DE App Data Folder',
+                    onPressed: () {
+                      gameStore.selectDirectory(
+                        gameStore.paths.esDeAppDataConfigPath,
+                      );
+                    },
+                  ),
                 ),
+                controller: gameStore.esDeAppDataConfigPath,
               ),
-              controller: gameStore.downloadedMediaPath,
-            ),
-            TextFormField(
-              decoration: InputDecoration(
-                labelText: 'Playnite Library Path',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.folder),
-                  onPressed: () {
-                    gameStore.selectDirectory(
-                      gameStore.paths.playniteLibraryPath,
-                    );
-                  },
+              TextFormField(
+                decoration: InputDecoration(
+                  labelText: 'ES-DE Downloaded Media Path',
+                  helperText:
+                      'Path to the ES-DE "downloaded_media" folder with assets such as images, videos and manuals.',
+                  helperMaxLines: 5,
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.folder),
+                    tooltip: 'Select the Downloaded Media Folder',
+                    onPressed: () {
+                      gameStore.selectDirectory(
+                        gameStore.paths.downloadedMediaPath,
+                      );
+                    },
+                  ),
                 ),
+                controller: gameStore.downloadedMediaPath,
               ),
-              controller: gameStore.playniteLibraryPath,
-            ),
-          ],
+              TextFormField(
+                decoration: InputDecoration(
+                  labelText: 'Playnite Library Path',
+                  helperText:
+                      'Path to the Playnite Library folder which contains the "games.db",'
+                      ' "companies.db" and "genres.db" files along with the "files" folder'
+                      ' with assets such as icons, covers and background images.',
+                  helperMaxLines: 5,
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.folder),
+                    tooltip: 'Select the Playnite Library Folder',
+                    onPressed: () {
+                      gameStore.selectDirectory(
+                        gameStore.paths.playniteLibraryPath,
+                      );
+                    },
+                  ),
+                ),
+                controller: gameStore.playniteLibraryPath,
+              ),
+            ],
+          ),
         ),
       ),
     );
