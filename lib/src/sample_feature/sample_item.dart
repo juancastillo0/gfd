@@ -84,37 +84,58 @@ class EsDeTheme {
 
 class ThemeColorScheme {}
 
+/// F:\games\ES-DE\themes\canvas-es-de\_inc\systems\metadata-global\gba.xml
+/// ```xml
+/// <theme>
+///    <variables>
+///      <systemName>Game Boy Advance</systemName>
+///      <systemDescription>The Game Boy Advance (abbreviated as GBA) is a 32-bit handheld video game console developed, manufactured and marketed by Nintendo as the successor to the Game Boy Color. It was released in Japan on March 21, 2001, in North America on June 11, 2001, in Australia and Europe on June 22, 2001, and in mainland China on June 8, 2004 (iQue Player). Nintendo's competitors in the handheld market at the time were the Neo Geo Pocket Color, WonderSwan, GP32, Tapwave Zodiac, and the N-Gage. Despite the competitors' best efforts, Nintendo maintained a majority market share with the Game Boy Advance. As of June 30, 2010, the Game Boy Advance series has sold 81.51 million units worldwide. Its successor, the Nintendo DS, was released in November 2004 and is also compatible with Game Boy Advance software.</systemDescription>
+///      <systemManufacturer>Nintendo</systemManufacturer>
+///      <systemReleaseYear>2001</systemReleaseYear>
+///      <systemReleaseDate>2001-06-11</systemReleaseDate>
+///      <systemReleaseDateFormated>June 11, 2001</systemReleaseDateFormated>
+///      <systemHardwareType>Portable</systemHardwareType>
+///      <systemCoverSize>1-1</systemCoverSize>
+///      <systemColor>4C74D6</systemColor>
+///      <systemColorPalette1>5C67A9</systemColorPalette1>
+///      <systemColorPalette2>280FBE</systemColorPalette2>
+///      <systemColorPalette3>BCBCBC</systemColorPalette3>
+///      <systemColorPalette4>212121</systemColorPalette4>
+/// 	   <systemCartSize>112-67</systemCartSize>
+///   </variables>
+/// </theme>
+/// ```
 /// F:\games\ES-DE\themes\canvas-es-de\_inc\systems\metadata-global\mario.xml
 class ThemeSystem {
-// mario
+  // mario
   final String systemId;
-// Super Mario
+  // Super Mario
   final String systemName;
-// View and play the Mario Games in your collection.
+  // View and play the Mario Games in your collection.
   final String systemDescription;
-// Nintendo
+  // Nintendo
   final String systemManufacturer;
-// Various
+  // Various
   final String systemReleaseYear;
-// Various
+  // Various
   final String systemReleaseDate;
-// Various
+  // Various
   final String systemReleaseDateFormated;
-// Various
+  // Various
   final String systemHardwareType;
-// 1-1
+  // 1-1
   final String systemCoverSize;
-// 3F549D
+  // 3F549D
   final String systemColor;
-// FED01B
+  // FED01B
   final String systemColorPalette1;
-// BA2318
+  // BA2318
   final String systemColorPalette2;
-// 0A2A8D
+  // 0A2A8D
   final String systemColorPalette3;
-// 007544
+  // 007544
   final String systemColorPalette4;
-// 1-1
+  // 1-1
   final String systemCartSize;
 
   ThemeSystem({
@@ -133,5 +154,68 @@ class ThemeSystem {
     required this.systemColorPalette3,
     required this.systemColorPalette4,
     required this.systemCartSize,
+  });
+
+  static const jsonSchema = '''
+{
+  "type": "object",
+  "required": [
+    "systemId",
+    "systemName",
+    "systemCoverSize",
+    "systemColor",
+    "systemColorPalette1",
+    "systemColorPalette2",
+    "systemColorPalette3",
+    "systemColorPalette4",
+    "systemCartSize"
+  ],
+  "properties": {
+    "systemId": {"type": "string"},
+    "systemName": {"type": "string"},
+    "systemDescription": {"type": "string"},
+    "systemManufacturer": {"type": "string"},
+    "systemReleaseDate": {"type": "string", "default": "Various"},
+    "systemHardwareType": {"type": "string", "default": "Various"},
+    "systemCoverSize": {"type": "string", "default": "1-1"},
+    "systemColor": {"type": "string", "pattern": "^[0-9A-F]{6}\$"},
+    "systemColorPalette1": {"type": "string", "pattern": "^[0-9A-F]{6}\$"},
+    "systemColorPalette2": {"type": "string", "pattern": "^[0-9A-F]{6}\$"},
+    "systemColorPalette3": {"type": "string", "pattern": "^[0-9A-F]{6}\$"},
+    "systemColorPalette4": {"type": "string", "pattern": "^[0-9A-F]{6}\$"},
+    "systemCartSize": {"type": "string", "default": "1-1"}
+  }
+}''';
+}
+
+/// ES-DE/themes/canvas-es-de/mario/theme.xml
+/// ```xml
+/// <theme>
+///   <include>./../theme.xml</include>
+/// </theme>
+/// ```
+/// ES-DE/themes/canvas-es-de/_inc/systems/metadata-global/mario.xml
+/// ES-DE/themes/canvas-es-de/_inc/systems/system/mario.svg
+class ThemeSystemAssets {
+  /// dark, light, medium
+  /// ES-DE/themes/canvas-es-de/_inc/systems/carousel-icons-art/{}/mario.webp
+  /// 800x1000
+  final String art;
+
+  /// art, screenshots
+  /// ES-DE/themes/canvas-es-de/_inc/systems/carousel-icons-capsule/{}/mario.webp
+  /// art: 1012x1022 or 1040x1039
+  /// screenshots: 600x600
+  final String capsule;
+
+  /// clear, dark, light, medium
+  /// ES-DE/themes/canvas-es-de/_inc/systems/carousel-icons-icons/{}/mario.webp
+  /// 800x1000
+  final String icons;
+
+  ThemeSystemAssets({
+    required this.art,
+    required this.capsule,
+    required this.icons,
   });
 }
