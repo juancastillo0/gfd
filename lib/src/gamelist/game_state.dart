@@ -378,6 +378,20 @@ class GameListStore extends ChangeNotifier {
       gamelists,
       (g, n) => ('<path>${g.path}</path>', '<path>./$n</path>'),
     );
+
+    /// Reselect the same games
+    final newSelectedGameName = gamesToRename[selectedGame];
+    await _loadGames();
+    selectedGames = <Game>{
+      ...selectedGames.map(
+        (s) => allGames.firstWhere(
+          (g) => g.path == './${gamesToRename[s] ?? s.relativePath}',
+        ),
+      ),
+    };
+    if (newSelectedGameName != null) {
+      selectedGamePath = './$newSelectedGameName';
+    }
   }
 
   Future<void> updateSelectedGamesCollection({
@@ -468,7 +482,8 @@ class GameListStore extends ChangeNotifier {
     }
   }
 
-  void _loadGames() async {
+  Future<void> _loadGames() async {
+    final isInitialLoad = allGames.isEmpty;
     allGames.clear();
     final systemList = [('ps2', _gamelistPs2), ('genesis', _gamesXml)];
 
@@ -679,7 +694,12 @@ class GameListStore extends ChangeNotifier {
       if (g.publisher != null) publishers.add(g.publisher!);
       if (g.developer != null) developers.add(g.developer!);
     }
-    filterGames();
+    if (isInitialLoad &&
+        storedFilters.containsKey(storedFilterController.text)) {
+      selectFilter(storedFilterController.text);
+    } else {
+      filterGames();
+    }
   }
 
   void toggleListGridView() {
@@ -690,7 +710,8 @@ class GameListStore extends ChangeNotifier {
   void storeFilter() => filterGames(store: true);
 
   void filterGames({bool store = false}) {
-    final gameFilter = GameFilter.fromJson(filterController.submit() as Map);
+    final gameFilter =
+        GameFilter.fromJson(filterController.rootOutputData as Map);
     if (store) {
       storedFilters[storedFilterController.text.trim()] = gameFilter;
     }
@@ -702,7 +723,6 @@ class GameListStore extends ChangeNotifier {
         .where(
           (g) => gameFilter.applies(
             g,
-            // remove "./" from path
             gameToCollection[g.romPath] ?? const [],
           ),
         )
