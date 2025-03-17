@@ -1,3 +1,4 @@
+import 'dart:io' as io;
 import 'dart:async';
 import 'dart:convert';
 
@@ -6,6 +7,7 @@ import 'package:eset/src/base_ui.dart' show TextEditingController;
 import 'package:eset/src/gamelist/game_data.dart';
 import 'package:eset/src/gamelist/game_model.dart';
 import 'package:eset/src/gamelist/playnite.dart';
+import 'package:eset/src/sample_feature/sample_item.dart';
 import 'package:eset/src/system_collection/game_filter_model.dart';
 import 'package:eset/src/system_collection/system_model.dart';
 import 'package:flutter/foundation.dart';
@@ -19,6 +21,9 @@ class GameListStore extends ChangeNotifier {
   GameListStore() {
     _loadState();
     _loadGames();
+    if (kIsWeb) {
+      fsa.FileSystem.instance.webDropFileEvents();
+    }
     filterController = JsonFormController(initialData: {});
 
     Timer? saveStateTimer;
