@@ -63,7 +63,7 @@ class GameListView extends StatelessWidget {
               children: [
                 TextButton(
                   onPressed: store.storeFilter,
-                  child: Text('Store'),
+                  child: TextNoSelect('Store'),
                 ),
                 AnimatedBuilder(
                   animation: store.storedFilterController,
@@ -73,7 +73,7 @@ class GameListView extends StatelessWidget {
                               .containsKey(store.storedFilterController.text)
                           ? store.deleteFilter
                           : null,
-                      child: Text('Delete'),
+                      child: TextNoSelect('Delete'),
                     );
                   },
                 )
@@ -83,11 +83,11 @@ class GameListView extends StatelessWidget {
               children: [
                 TextButton(
                   onPressed: store.toggleFilter,
-                  child: Text('Hide'),
+                  child: TextNoSelect('Hide'),
                 ),
                 TextButton(
                   onPressed: store.clearFilter,
-                  child: Text('Clear'),
+                  child: TextNoSelect('Clear'),
                 ),
               ],
             ),
@@ -250,7 +250,7 @@ class GameListView extends StatelessWidget {
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: Text('Cancel'),
+                    child: TextNoSelect('Cancel'),
                   ),
                   TextButton(
                     onPressed: () {
@@ -258,7 +258,7 @@ class GameListView extends StatelessWidget {
                       store.renameSelectedGamesExtension(extension);
                       Navigator.pop(context);
                     },
-                    child: Text('Rename'),
+                    child: TextNoSelect('Rename'),
                   ),
                 ],
               );
@@ -284,23 +284,28 @@ class GameListView extends StatelessWidget {
               TextButton.icon(
                 onPressed: store.toggleFilter,
                 icon: Icon(Icons.filter_alt_rounded),
-                label: Text('Filter'),
+                label: TextNoSelect('Filter'),
               ),
             TextButton.icon(
               onPressed: showCountsDialog,
               icon: Icon(Icons.bar_chart),
-              label: Text('${store.games.length} Games'),
+              label: TextNoSelect('${store.games.length} Games'),
             ),
             Column(
               children: [
-                TextButton.icon(
-                  onPressed: store.toggleSelectingGames,
-                  icon: store.isSelectingGames
-                      ? Icon(Icons.cancel_outlined)
-                      : Icon(Icons.checklist_rounded),
-                  label: store.isSelectingGames
-                      ? Text('${store.selectedGames.length} Selected')
-                      : Text('Select'),
+                Tooltip(
+                  message: store.isSelectingGames
+                      ? 'Cancel Selection'
+                      : 'Select Games',
+                  child: TextButton.icon(
+                    onPressed: store.toggleSelectingGames,
+                    icon: store.isSelectingGames
+                        ? Icon(Icons.cancel_outlined)
+                        : Icon(Icons.checklist_rounded),
+                    label: store.isSelectingGames
+                        ? TextNoSelect('${store.selectedGames.length} Selected')
+                        : TextNoSelect('Select'),
+                  ),
                 ),
                 if (store.isSelectingGames)
                   PopupMenuButton<SelectedGamesAction>(
@@ -335,7 +340,7 @@ class GameListView extends StatelessWidget {
                                   }[a],
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
+                                TextNoSelect(
                                   a.name.replaceAllMapped(
                                     RegExp('[a-z][A-Z]|^[a-z]'),
                                     (a) => a.group(0)!.length == 1
@@ -356,7 +361,7 @@ class GameListView extends StatelessWidget {
                         children: [
                           Icon(Icons.more_horiz),
                           const SizedBox(width: 10),
-                          Text('Actions'),
+                          TextNoSelect('Actions'),
                         ],
                       ),
                     ),
@@ -413,12 +418,12 @@ class GameListView extends StatelessWidget {
             TextButton.icon(
               onPressed: store.isGridView ? null : store.toggleListGridView,
               icon: Icon(Icons.grid_view),
-              label: Text('Grid'),
+              label: TextNoSelect('Grid'),
             ),
             TextButton.icon(
               onPressed: store.isGridView ? store.toggleListGridView : null,
               icon: Icon(Icons.list),
-              label: Text('List'),
+              label: TextNoSelect('List'),
             ),
           ],
         ),
@@ -499,7 +504,7 @@ class _GameList extends StatelessWidget {
     final double ratingWidth = 50;
     final double releaseWidth = 75;
     final double genreWidth = 120;
-    final double playersWidth = 50;
+    final double playersWidth = 60;
 
     List<Widget> otherProps(Game item) => [
           SizedBox(
@@ -530,9 +535,7 @@ class _GameList extends StatelessWidget {
           ),
           SizedBox(
             width: playersWidth,
-            child: Text(
-              (item.playersMax ?? item.playersMin)?.toString() ?? '',
-            ),
+            child: Text(item.playersString),
           ),
         ];
 
