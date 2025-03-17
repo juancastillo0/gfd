@@ -51,6 +51,7 @@ class Game {
   String get relativePath =>
       system == 'pc' ? name! : path.substring(path.indexOf('/') + 1);
   String get romPath =>
+      // remove "./" from path
       system == 'pc' ? name! : '%ROMPATH%/$system/${path.substring(2)}';
 
   Map<String, dynamic> toJson() {

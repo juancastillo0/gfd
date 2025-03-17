@@ -1,4 +1,5 @@
 import 'package:eset/src/system_collection/game_filter_model.dart';
+import 'package:xml/xml.dart';
 
 /// A placeholder class that represents an entity or model.
 class SampleItem {
@@ -89,7 +90,16 @@ class ThemeColorScheme {}
 /// <theme>
 ///    <variables>
 ///      <systemName>Game Boy Advance</systemName>
-///      <systemDescription>The Game Boy Advance (abbreviated as GBA) is a 32-bit handheld video game console developed, manufactured and marketed by Nintendo as the successor to the Game Boy Color. It was released in Japan on March 21, 2001, in North America on June 11, 2001, in Australia and Europe on June 22, 2001, and in mainland China on June 8, 2004 (iQue Player). Nintendo's competitors in the handheld market at the time were the Neo Geo Pocket Color, WonderSwan, GP32, Tapwave Zodiac, and the N-Gage. Despite the competitors' best efforts, Nintendo maintained a majority market share with the Game Boy Advance. As of June 30, 2010, the Game Boy Advance series has sold 81.51 million units worldwide. Its successor, the Nintendo DS, was released in November 2004 and is also compatible with Game Boy Advance software.</systemDescription>
+///      <systemDescription>The Game Boy Advance (abbreviated as GBA) is a 32-bit handheld video game
+///         console developed, manufactured and marketed by Nintendo as the successor to the Game Boy Color.
+///         It was released in Japan on March 21, 2001, in North America on June 11, 2001, in Australia and
+///         Europe on June 22, 2001, and in mainland China on June 8, 2004 (iQue Player). Nintendo's competitors
+///         in the handheld market at the time were the Neo Geo Pocket Color, WonderSwan, GP32, Tapwave Zodiac,
+///         and the N-Gage. Despite the competitors' best efforts, Nintendo maintained a majority market
+///         share with the Game Boy Advance. As of June 30, 2010, the Game Boy Advance series has sold
+///         81.51 million units worldwide. Its successor, the Nintendo DS, was released in November 2004
+///         and is also compatible with Game Boy Advance software.
+///      </systemDescription>
 ///      <systemManufacturer>Nintendo</systemManufacturer>
 ///      <systemReleaseYear>2001</systemReleaseYear>
 ///      <systemReleaseDate>2001-06-11</systemReleaseDate>
@@ -156,7 +166,7 @@ class ThemeSystem {
     required this.systemCartSize,
   });
 
-  static const jsonSchema = '''
+  static const jsonSchema = r'''
 {
   "type": "object",
   "required": [
@@ -173,19 +183,64 @@ class ThemeSystem {
   "properties": {
     "systemId": {"type": "string"},
     "systemName": {"type": "string"},
+    "systemName": {"type": "string"},
+    "logo": {"type": "string", "format": "data-url"},
+    "art": {"type": "string", "format": "data-url"},
+    "icon": {"type": "string", "format": "data-url"},
     "systemDescription": {"type": "string"},
     "systemManufacturer": {"type": "string"},
     "systemReleaseDate": {"type": "string", "default": "Various"},
     "systemHardwareType": {"type": "string", "default": "Various"},
     "systemCoverSize": {"type": "string", "default": "1-1"},
-    "systemColor": {"type": "string", "pattern": "^[0-9A-F]{6}\$"},
-    "systemColorPalette1": {"type": "string", "pattern": "^[0-9A-F]{6}\$"},
-    "systemColorPalette2": {"type": "string", "pattern": "^[0-9A-F]{6}\$"},
-    "systemColorPalette3": {"type": "string", "pattern": "^[0-9A-F]{6}\$"},
-    "systemColorPalette4": {"type": "string", "pattern": "^[0-9A-F]{6}\$"},
+    "systemColor": {"type": "string", "pattern": "^[0-9A-Fa-f]{1,6}$"},
+    "systemColorPalette1": {"type": "string", "pattern": "^[0-9A-Fa-f]{1,6}$"},
+    "systemColorPalette2": {"type": "string", "pattern": "^[0-9A-Fa-f]{1,6}$"},
+    "systemColorPalette3": {"type": "string", "pattern": "^[0-9A-Fa-f]{1,6}$"},
+    "systemColorPalette4": {"type": "string", "pattern": "^[0-9A-Fa-f]{1,6}$"},
     "systemCartSize": {"type": "string", "default": "1-1"}
   }
 }''';
+
+  factory ThemeSystem.fromJson(Map<String, dynamic> map) {
+    return ThemeSystem(
+      systemId: map['systemId'] as String,
+      systemName: map['systemName'] as String,
+      systemDescription: map['systemDescription'] as String,
+      systemManufacturer: map['systemManufacturer'] as String,
+      systemReleaseYear: map['systemReleaseYear'] as String,
+      systemReleaseDate: map['systemReleaseDate'] as String,
+      systemReleaseDateFormated: map['systemReleaseDateFormated'] as String,
+      systemHardwareType: map['systemHardwareType'] as String,
+      systemCoverSize: map['systemCoverSize'] as String,
+      systemColor: map['systemColor'] as String,
+      systemColorPalette1: (map['systemColorPalette1'] as String).toUpperCase(),
+      systemColorPalette2: (map['systemColorPalette2'] as String).toUpperCase(),
+      systemColorPalette3: (map['systemColorPalette3'] as String).toUpperCase(),
+      systemColorPalette4: (map['systemColorPalette4'] as String).toUpperCase(),
+      systemCartSize: map['systemCartSize'] as String,
+    );
+  }
+
+  factory ThemeSystem.fromXml(String systemId, XmlElement element) {
+    return ThemeSystem(
+      systemId: systemId,
+      systemName: element.getElement('systemName')!.innerText,
+      systemDescription: element.getElement('systemDescription')!.innerText,
+      systemManufacturer: element.getElement('systemManufacturer')!.innerText,
+      systemReleaseYear: element.getElement('systemReleaseYear')!.innerText,
+      systemReleaseDate: element.getElement('systemReleaseDate')!.innerText,
+      systemReleaseDateFormated:
+          element.getElement('systemReleaseDateFormated')!.innerText,
+      systemHardwareType: element.getElement('systemHardwareType')!.innerText,
+      systemCoverSize: element.getElement('systemCoverSize')!.innerText,
+      systemColor: element.getElement('systemColor')!.innerText,
+      systemColorPalette1: element.getElement('systemColorPalette1')!.innerText,
+      systemColorPalette2: element.getElement('systemColorPalette2')!.innerText,
+      systemColorPalette3: element.getElement('systemColorPalette3')!.innerText,
+      systemColorPalette4: element.getElement('systemColorPalette4')!.innerText,
+      systemCartSize: element.getElement('systemCartSize')!.innerText,
+    );
+  }
 }
 
 /// ES-DE/themes/canvas-es-de/mario/theme.xml
@@ -217,5 +272,17 @@ class ThemeSystemAssets {
     required this.art,
     required this.capsule,
     required this.icons,
+  });
+}
+
+class ThemeSystemAssetsComponents {
+  final String logo;
+  final String art;
+  final String icon;
+
+  ThemeSystemAssetsComponents({
+    required this.logo,
+    required this.art,
+    required this.icon,
   });
 }

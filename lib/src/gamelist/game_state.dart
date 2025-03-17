@@ -105,6 +105,7 @@ class GameListStore extends ChangeNotifier {
   /// COMPUTED
   ///
   Map<String, List<String>> collections = {};
+  Map<String, ThemeSystem> collectionSystems = {};
   Map<String, List<String>> gameToCollection = {};
   Set<String> genres = {};
   Set<String> developers = {};
@@ -206,6 +207,9 @@ class GameListStore extends ChangeNotifier {
   }
 
   static const _sharedPreferenceKey = 'games_store';
+
+  JsonFormController themeSystemController =
+      JsonFormController(initialData: {});
 
   Future<void> renameSelectedGame(String newName) async {
     final game = selectedGame;
@@ -452,6 +456,7 @@ class GameListStore extends ChangeNotifier {
               .getIoNativeHandleFromPath(downloadedMediaPath.text)
           as fsa.FileSystemDirectoryHandle?;
     }
+    final esDeDataHandle = paths.esDeAppDataConfigPath.handle;
 
     if (gamelistsDir != null) {
       systemList.clear();
@@ -482,6 +487,21 @@ class GameListStore extends ChangeNotifier {
             name = name.substring(customCollectionPrefix.length);
           }
           collections[name] = collectionText.split('\n');
+          final collectionId = name.toLowerCase().replaceAll(' ', '-');
+          //   themes\canvas-es-de\_inc\systems\metadata-global\mario.xml
+          final systemTheme = await esDeDataHandle!.getNestedFileHandle(
+            'themes/canvas-es-de/_inc/systems/metadata-global/$collectionId.xml',
+          );
+          if (systemTheme
+              is fsa.Ok<fsa.FileSystemFileHandle, fsa.GetHandleError>) {
+            final xml =
+                await (await systemTheme.value.getFile()).readAsString();
+            final document = XmlDocument.parse(xml);
+            collectionSystems[name] = ThemeSystem.fromXml(
+              collectionId,
+              document.getElement('theme')!.getElement('variables')!,
+            );
+          }
         }
       }
       collections.forEach((k, gl) {
@@ -723,6 +743,13 @@ class GameListStore extends ChangeNotifier {
   void selectCollection(String collection) {
     selectedCollection = collection;
     notifyListeners();
+  }
+
+  void createSystemCollection(
+    String collection,
+    ThemeSystem system,
+  ) {
+    // TODO: create system from collection
   }
 }
 
