@@ -50,7 +50,7 @@ List<Game> parsePlayniteDb(
     p.takeUntil("Image");
     final prefixAndId = p.takeUntil("\\");
     final s = ByteUtils.splitBytes(prefixAndId, 0);
-    final id = ascii.decode(s.last);
+    final id = utf8.decode(s.last);
     p.takeUntil("Description");
     final descSplit = ByteUtils.splitBytes(p.takeUntil("GenreIds"), 0);
     final desc = utf8.decode(descSplit[descSplit.length - 2]);
@@ -75,7 +75,7 @@ List<Game> parsePlayniteDb(
     p.takeUntil("ReleaseDate");
     final dateSplit = ByteUtils.splitBytes(p.takeUntil("FeatureIds"), 0);
     final date = DateTime.tryParse(
-      ascii.decode(dateSplit[dateSplit.length - 2]),
+      utf8.decode(dateSplit[dateSplit.length - 2]),
     );
 
     p.takeUntil("IsInstalled");
@@ -90,7 +90,7 @@ List<Game> parsePlayniteDb(
     // p.take(4);
     p.takeWhile((b) => !ByteUtils.isAlphanumeric(b));
     final nameBytes = p.takeWhile((b) => b != 0);
-    final name = ascii.decode(nameBytes);
+    final name = utf8.decode(nameBytes);
     result.add(Game(
       system: 'pc',
       name: name,

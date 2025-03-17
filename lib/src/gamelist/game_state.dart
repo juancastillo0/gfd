@@ -233,6 +233,12 @@ class GameListStore extends ChangeNotifier {
   }
 
   Future<void> renameGames(Map<Game, String> gamesToRename) async {
+    if (gamesToRename.keys.any((g) => g.system == 'pc')) {
+      return _errorsStreamController.add(
+        'Renaming PC games is not supported.',
+      );
+    }
+
     /// Validate Names
     if (gamesToRename.isEmpty) return;
     for (final MapEntry(key: gameToRename, :value) in gamesToRename.entries) {
@@ -301,6 +307,51 @@ class GameListStore extends ChangeNotifier {
         .whereType<fsa.FileSystemFileHandle>()
         .toList();
     if (collectionList.length != collections.length) return;
+
+    final Map<String, List<MapEntry<Game, String>>> fullnameChange = {};
+    gamesToRename.forEach((game, value) {
+      if (game.name == value.substring(0, value.lastIndexOf('.'))) {
+        fullnameChange
+            .putIfAbsent(game.system, () => [])
+            .add(MapEntry(game, value));
+      }
+    });
+    if (fullnameChange.isNotEmpty) {
+      final downloadedMediaHandle = paths.downloadedMediaPath.handle;
+      if (downloadedMediaHandle == null) {
+        return _errorsStreamController.add(
+          'No Downloaded Media path configured in settings.'
+          ' Required for renaming game assets.',
+        );
+      }
+      final permissions = await downloadedMediaHandle.requestPermission(
+        mode: fsa.FileSystemPermissionMode.readwrite,
+      );
+      if (permissions != fsa.PermissionStateEnum.granted) return;
+
+      for (final MapEntry(key: system, value: games)
+          in fullnameChange.entries) {
+        final dirR = await downloadedMediaHandle.getDirectoryHandle(system);
+        if (dirR
+            is! fsa.Ok<fsa.FileSystemDirectoryHandle, fsa.GetHandleError>) {
+          _errorsStreamController.add(
+            'No directory for system "$system" in Downloaded Media path.',
+          );
+          continue;
+        }
+        final directories = await dirR.value.entries().toList();
+        for (final dirA
+            in directories.whereType<fsa.FileSystemDirectoryHandle>()) {
+          await Future.wait(games.map((g) {
+            final MapEntry(key: game, :value) = g;
+            return dirA.renameFile(
+              '${game.filename}.png',
+              '${value.substring(0, value.lastIndexOf('.'))}.png',
+            );
+          }));
+        }
+      }
+    }
 
     /// Edit Files
     Future<void> replaceInHandles(
@@ -793,6 +844,43 @@ extension FileSystemHandleDir on fsa.FileSystemDirectoryHandle {
     }
     return fsa.Ok(dir);
   }
+
+  Future<fsa.Result<void, fsa.GetHandleError>> renameFile(
+    String initialPath,
+    String newPath,
+  ) async {
+    if (!kIsWeb) {
+      // TODO: rename name to path
+      await io.File('$name/$initialPath').rename('$name/$newPath');
+      return fsa.Ok(null);
+    }
+    final initialName = initialPath.substring(initialPath.lastIndexOf('/') + 1);
+    final dirR = await getNestedDirectoryHandle(
+      initialPath.substring(0, initialPath.lastIndexOf('/')),
+    );
+    if (dirR is! fsa.Ok<fsa.FileSystemDirectoryHandle, fsa.GetHandleError>) {
+      return dirR;
+    }
+
+    final previousFile = await dirR.value.getFileHandle(initialName);
+    if (previousFile is! fsa.Ok<fsa.FileSystemFileHandle, fsa.GetHandleError>) {
+      return previousFile;
+    }
+    final newFile = await getNestedFileHandle(newPath, create: true);
+    if (newFile is! fsa.Ok<fsa.FileSystemFileHandle, fsa.GetHandleError>) {
+      return newFile;
+    }
+
+    final f = await previousFile.value.getFile();
+    final bytes = await f.readAsBytes();
+    final writable =
+        await newFile.value.createWritable(keepExistingData: false);
+    await writable
+        .write(fsa.FileSystemWriteChunkType.bufferSource(bytes.buffer));
+    await writable.close();
+
+    await dirR.value.removeEntry(initialName);
+    return fsa.Ok(null);
   }
 }
 
