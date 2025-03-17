@@ -1,4 +1,5 @@
 import 'package:eset/src/gamelist/game_model.dart';
+import "package:unorm_dart/unorm_dart.dart" as unorm;
 
 class GameFilter {
   final List<String> systems;
@@ -82,11 +83,17 @@ class GameFilter {
 
   factory GameFilter.fromJson(Map json) {
     return GameFilter(
-      systems: (json['systems'] as List?)?.cast() ?? const [],
-      genres: (json['genres'] as List?)?.cast() ?? const [],
-      collections: (json['collections'] as List?)?.cast() ?? const [],
-      developers: (json['developers'] as List?)?.cast() ?? const [],
-      publishers: (json['publishers'] as List?)?.cast() ?? const [],
+      systems:
+          (json['systems'] as List?)?.whereType<String>().toList() ?? const [],
+      genres:
+          (json['genres'] as List?)?.whereType<String>().toList() ?? const [],
+      collections:
+          (json['collections'] as List?)?.whereType<String>().toList() ??
+              const [],
+      developers: (json['developers'] as List?)?.whereType<String>().toList() ??
+          const [],
+      publishers: (json['publishers'] as List?)?.whereType<String>().toList() ??
+          const [],
       name: json['name'] ?? '',
       description: json['description'] ?? '',
       minRating: json['minRating'] ?? 1,
@@ -132,9 +139,14 @@ class GameFilter {
       final p = RegExp(pattern, caseSensitive: false);
       if (p.hasMatch(value)) return true;
     } catch (_) {}
-    final toReplace = RegExp(r'[\s:,_-]+');
-    return value.trim().replaceAll(toReplace, ' ').toLowerCase().contains(
-          pattern.trim().toLowerCase().replaceAll(toReplace, ' '),
+    final toReplace = RegExp(r'[\s:,;_-]+');
+    return unorm
+        .nfd(value)
+        .replaceAll(toReplace, ' ')
+        .trim()
+        .toLowerCase()
+        .contains(
+          unorm.nfd(pattern).replaceAll(toReplace, ' ').trim().toLowerCase(),
         );
   }
 
