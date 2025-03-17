@@ -1,11 +1,10 @@
-import 'dart:io';
-
 import 'package:eset/src/base_ui.dart';
 import 'package:eset/src/gamelist/game_model.dart';
 import 'package:eset/src/gamelist/game_state.dart';
 import 'package:eset/src/system_collection/system_model.dart';
 import 'package:eset/src/utils/game_image_widget.dart';
 import 'package:eset/src/utils/string_utils.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
 /// Displays detailed information about a Game.
 class GameDetailsView extends StatelessWidget {
@@ -36,7 +35,7 @@ class GameDetailsView extends StatelessWidget {
               if (game.desc != null)
                 Padding(
                   padding: const EdgeInsets.all(18.0),
-                  child: Text(game.desc!),
+                  child: HtmlWidget(game.desc!),
                 ),
               GameDataView(game: game),
               Padding(
