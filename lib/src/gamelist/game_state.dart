@@ -187,14 +187,13 @@ class GameListStore extends ChangeNotifier {
       final l = type == SystemImageAsset.screenshots
           ? item.playniteAssets!.reversed
           : item.playniteAssets!;
-      return l.firstWhere(
+      final relative = l.firstWhere(
         (element) => type == SystemImageAsset.marquees
             ? !element.endsWith('.jpg')
             : element.endsWith('.jpg'),
-        orElse: () {
-          return '${dirPath}files/${item.path}/image.png';
-        },
+        orElse: () => '${item.path}/image.png',
       );
+      return '${dirPath}files/$relative';
     }
     final a = type.name.replaceFirst(r'$', '');
     return '$dirPath${item.system}/$a/${item.filename}.png';
@@ -530,7 +529,7 @@ class GameListStore extends ChangeNotifier {
         playniteDb = (await playniteHandle.getFileHandle('games.db')).okOrNull;
         companiesDb =
             (await playniteHandle.getFileHandle('companies.db')).okOrNull;
-        playniteDb = (await playniteHandle.getFileHandle('genres.db')).okOrNull;
+        genresDb = (await playniteHandle.getFileHandle('genres.db')).okOrNull;
         playniteFiles =
             (await playniteHandle.getDirectoryHandle('files')).okOrNull;
       }
@@ -736,17 +735,32 @@ extension FileSystemHandleName on fsa.FileSystemHandle {
 
 extension FileSystemHandleDir on fsa.FileSystemDirectoryHandle {
   Future<fsa.Result<fsa.FileSystemFileHandle, fsa.GetHandleError>>
-      getNestedFileHandle(String path) async {
-    final paths = path.split('/');
+      getNestedFileHandle(String path, {bool? create}) async {
+    final index = path.lastIndexOf('/');
+    final dirR = await getNestedDirectoryHandle(
+      path.substring(0, index),
+      create: create,
+    );
+    if (dirR is! fsa.Ok<fsa.FileSystemDirectoryHandle, fsa.GetHandleError>) {
+      return fsa.Err(dirR.errOrNull!);
+    }
+    return dirR.value.getFileHandle(path.substring(index + 1), create: create);
+  }
+
+  Future<fsa.Result<fsa.FileSystemDirectoryHandle, fsa.GetHandleError>>
+      getNestedDirectoryHandle(String path, {bool? create}) async {
+    final paths =
+        path.split('/').where((v) => v.isNotEmpty).toList(growable: false);
     fsa.FileSystemDirectoryHandle dir = this;
-    for (final p in paths.sublist(0, paths.length - 1)) {
-      final d = await dir.getDirectoryHandle(p);
+    for (final p in paths) {
+      final d = await dir.getDirectoryHandle(p, create: create);
       if (d is! fsa.Ok<fsa.FileSystemDirectoryHandle, fsa.GetHandleError>) {
-        return fsa.Err(d.errOrNull!);
+        return d;
       }
       dir = d.value;
     }
-    return dir.getFileHandle(paths.last);
+    return fsa.Ok(dir);
+  }
   }
 }
 

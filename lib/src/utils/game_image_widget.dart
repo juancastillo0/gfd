@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:io';
 
+import 'package:eset/src/gamelist/game_data.dart';
 import 'package:eset/src/gamelist/game_details_view.dart';
 import 'package:eset/src/gamelist/game_model.dart';
 import 'package:eset/src/gamelist/game_state.dart';
@@ -9,7 +10,7 @@ import 'package:eset/src/system_collection/system_model.dart';
 import 'package:file_system_access/file_system_access.dart';
 import 'package:flutter/foundation.dart';
 
-class GameImage extends StatefulWidget {
+class GameImage extends StatelessWidget {
   const GameImage({
     super.key,
     required this.game,
@@ -24,20 +25,54 @@ class GameImage extends StatefulWidget {
   final Widget Function(BuildContext, Object, StackTrace?)? errorBuilder;
 
   @override
-  State<GameImage> createState() => _GameImageState();
+  Widget build(BuildContext context) {
+    final store = (GameListStore.ref..watch(context)).of(context);
+    return FSAImage(
+      path: store.imagePath(game, imageAsset: imageAsset),
+      errorBuilder: errorBuilder,
+      width: width,
+      pathHandle: game.system == 'pc'
+          ? store.paths.playniteLibraryPath
+          : store.paths.downloadedMediaPath,
+    );
+  }
 }
 
-class _GameImageState extends State<GameImage> {
+class FSAImage extends StatefulWidget {
+  const FSAImage({
+    super.key,
+    required this.pathHandle,
+    required this.path,
+    this.errorBuilder,
+    this.width,
+  });
+
+  final GameListPath<FileSystemDirectoryHandle> pathHandle;
+  final String path;
+  final double? width;
+  final Widget Function(BuildContext, Object, StackTrace?)? errorBuilder;
+
+  @override
+  State<FSAImage> createState() => _FSAImageState();
+}
+
+class _FSAImageState extends State<FSAImage> {
   Uint8List? imageBytes;
   bool isLoading = false;
   late GameListStore store;
   String? path;
+  GetHandleErrorType? error;
 
   static final Map<String, (DateTime, Uint8List)> _imageCache = {};
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _setupImage();
+  }
+
+  @override
+  void didUpdateWidget(covariant FSAImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
     _setupImage();
   }
 
@@ -66,7 +101,7 @@ class _GameImageState extends State<GameImage> {
     if (path == null) store.addListener(_setupImage);
 
     final previousPath = path;
-    path = store.imagePath(widget.game, imageAsset: widget.imageAsset);
+    path = widget.path;
 
     if (kIsWeb && (imageBytes == null || path != previousPath) && !isLoading) {
       final newPath = path!;
@@ -78,25 +113,23 @@ class _GameImageState extends State<GameImage> {
           return;
         }
         isLoading = true;
-        final game = widget.game;
-        final isPlaynite = game.system == 'pc';
-        final handle = isPlaynite
-            ? store.paths.playniteLibraryPath.handle
-            : store.paths.downloadedMediaPath.handle;
+        final handle = widget.pathHandle.handle;
         if (handle == null) return;
-        String prefix = isPlaynite
-            ? store.playniteLibraryPath.text
-            : store.downloadedMediaPath.text;
+        String prefix = widget.pathHandle.controller.text;
         if (!prefix.endsWith('/')) prefix = '$prefix/';
 
-        final fileResult = await handle.getNestedFileHandle(
-          newPath.substring(newPath.lastIndexOf(prefix) + prefix.length),
-        );
+        final relativePath = newPath.contains(prefix)
+            ? newPath.substring(newPath.lastIndexOf(prefix) + prefix.length)
+            : newPath;
+        final fileResult = await handle.getNestedFileHandle(relativePath);
         final file = fileResult.okOrNull;
         if (file != null) {
           imageBytes = await (await file.getFile()).readAsBytes();
           _imageCache[newPath] = (DateTime.now(), imageBytes!);
           validateCache();
+          error = null;
+        } else {
+          error = fileResult.errOrNull!.type;
         }
       } finally {
         if (mounted) {
@@ -114,26 +147,36 @@ class _GameImageState extends State<GameImage> {
   @override
   Widget build(BuildContext context) {
     final errorBuilder = widget.errorBuilder ?? imageAssetErrorBuilder(path!);
-    if (kIsWeb) {
-      if (isLoading) {
-        return Center(child: const CircularProgressIndicator());
-      } else if (imageBytes == null) {
-        return Text(
-          store.paths.downloadedMediaPath.handle == null
-              ? 'No Downloaded Media Handle'
-              : 'No image',
-        );
-      }
-      return Image.memory(
-        imageBytes!,
-        width: widget.width,
-        errorBuilder: errorBuilder,
-      );
-    }
-    return Image.file(
-      File(path!),
+    return SizedBox(
       width: widget.width,
-      errorBuilder: errorBuilder,
+      child: Builder(
+        builder: (context) {
+          if (kIsWeb) {
+            if (isLoading) {
+              return Padding(
+                padding: const EdgeInsets.all(18.0),
+                child: Center(child: const CircularProgressIndicator()),
+              );
+            } else if (imageBytes == null) {
+              return Text(
+                widget.pathHandle.handle == null
+                    ? 'No Media Asset Directory Handle'
+                    : 'No image ${error?.toString() ?? ''}. "$path"',
+              );
+            }
+            return Image.memory(
+              imageBytes!,
+              width: widget.width,
+              errorBuilder: errorBuilder,
+            );
+          }
+          return Image.file(
+            File(path!),
+            width: widget.width,
+            errorBuilder: errorBuilder,
+          );
+        },
+      ),
     );
   }
 }
