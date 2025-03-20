@@ -93,33 +93,30 @@ class _FileDropTargetState extends State<FileDropTarget> {
     if (kIsWeb) {
       return container;
     }
-    return SizedBox(
-      width: 100,
-      child: DropTarget(
-        onDragDone: (detail) {
-          final files = detail.files
-              .map(
-                (f) => FileSystemFileWebSafe(
-                  file: f,
-                  handle: FileSystem.instance.getIoNativeHandleFromPath(f.path)
-                      as FileSystemFileHandle,
-                ),
-              )
-              .toList();
-          onSelect(files);
-        },
-        onDragEntered: (detail) {
-          setState(() {
-            _dragging = true;
-          });
-        },
-        onDragExited: (detail) {
-          setState(() {
-            _dragging = false;
-          });
-        },
-        child: container,
-      ),
+    return DropTarget(
+      onDragDone: (detail) {
+        final files = detail.files
+            .map(
+              (f) => FileSystemFileWebSafe(
+                file: f,
+                handle: FileSystem.instance.getIoNativeHandleFromPath(f.path)
+                    as FileSystemFileHandle,
+              ),
+            )
+            .toList();
+        onSelect(files);
+      },
+      onDragEntered: (detail) {
+        setState(() {
+          _dragging = true;
+        });
+      },
+      onDragExited: (detail) {
+        setState(() {
+          _dragging = false;
+        });
+      },
+      child: container,
     );
   }
 }
