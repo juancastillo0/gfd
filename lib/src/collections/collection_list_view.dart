@@ -58,7 +58,7 @@ class CollectionsListView extends StatelessWidget {
                             ),
                           );
                         },
-                        child: Text(
+                        child: TextNoSelect(
                           themeSystem == null ? 'Create System' : 'Edit System',
                         ),
                       ),

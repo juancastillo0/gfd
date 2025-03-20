@@ -43,15 +43,15 @@ class SettingsView extends StatelessWidget {
                 items: const [
                   DropdownMenuItem(
                     value: ThemeMode.system,
-                    child: Text('System Theme'),
+                    child: TextNoSelect('System Theme'),
                   ),
                   DropdownMenuItem(
                     value: ThemeMode.light,
-                    child: Text('Light Theme'),
+                    child: TextNoSelect('Light Theme'),
                   ),
                   DropdownMenuItem(
                     value: ThemeMode.dark,
-                    child: Text('Dark Theme'),
+                    child: TextNoSelect('Dark Theme'),
                   )
                 ],
               ),
