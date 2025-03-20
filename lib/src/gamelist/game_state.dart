@@ -838,6 +838,21 @@ class GameListStore extends ChangeNotifier {
   ) {
     // TODO: create system from collection
   }
+
+  void orderBy(GameOrderKind kind) {
+    final field = filterController.retrieveField('order')!;
+    final list = [...(field.value as List)];
+    final index = list.indexWhere((a) => a != null && a['kind'] == kind.name);
+    final Map<String, Object?> item;
+    if (index == -1) {
+      item = {'kind': kind.name, 'isDesc': false};
+    } else {
+      item = {...list.removeAt(index)!};
+      item['isDesc'] = !(item['isDesc'] as bool? ?? true);
+    }
+    list.insert(0, item);
+    field.value = list;
+  }
 }
 
 extension FileSystemHandleName on fsa.FileSystemHandle {

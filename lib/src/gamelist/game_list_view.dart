@@ -407,7 +407,7 @@ class GameListView extends StatelessWidget {
                         value: v,
                         child: Padding(
                           padding: const EdgeInsets.only(left: 6.0),
-                          child: Text(v.name.replaceFirst(r'$', '')),
+                          child: TextNoSelect(v.name.replaceFirst(r'$', '')),
                         ),
                       ),
                     )
@@ -501,8 +501,8 @@ class _GameList extends StatelessWidget {
     final double imageWidth = store.imageWidth;
     final double extensionWith = 40;
     final double systemWidth = 60;
-    final double ratingWidth = 50;
-    final double releaseWidth = 75;
+    final double ratingWidth = 75;
+    final double releaseWidth = 85;
     final double genreWidth = 120;
     final double playersWidth = 60;
 
@@ -584,42 +584,84 @@ class _GameList extends StatelessWidget {
       );
     }
 
+    final currentOrder =
+        store.filterController.retrieveField('order')!.value as List;
+    Widget buildOrderableColumn(
+      GameOrderKind orderKind,
+      Widget title, {
+      double? width,
+    }) {
+      final index = currentOrder
+          .indexWhere((e) => e is Map && e['kind'] == orderKind.name);
+      final isDesc = index == -1 ? null : currentOrder[index]['isDesc'] == true;
+      return InkWell(
+        onTap: () => store.orderBy(orderKind),
+        child: SizedBox(
+          width: width,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              title,
+              if (isDesc != null) ...[
+                const SizedBox(width: 4),
+                Icon(
+                  isDesc ? Icons.arrow_upward : Icons.arrow_downward,
+                  size: 12,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                TextNoSelect(
+                  '${index + 1}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                )
+              ]
+            ],
+          ),
+        ),
+      );
+    }
+
+    Widget buildColumn(String title, double width) => Container(
+          alignment: Alignment.center,
+          width: width,
+          child: TextNoSelect(title),
+        );
+
     return Column(
       children: [
-        Row(
-          children: [
-            SizedBox(
-              width: imageWidth,
-              child: Text('Image'),
-            ),
-            Expanded(
-              child: Text('Name'),
-            ),
-            SizedBox(
-              width: extensionWith,
-              child: Text('Ext'),
-            ),
-            SizedBox(
-              width: systemWidth,
-              child: Text('System'),
-            ),
-            SizedBox(
-              width: ratingWidth,
-              child: Text('Rating'),
-            ),
-            SizedBox(
-              width: releaseWidth,
-              child: Text('Release'),
-            ),
-            SizedBox(
-              width: genreWidth,
-              child: Text('Genre'),
-            ),
-            SizedBox(
-              width: playersWidth,
-              child: Text('Players'),
-            ),
-          ],
+        SizedBox(
+          height: 30,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              buildColumn('Image', imageWidth),
+              Expanded(
+                child: buildOrderableColumn(
+                  GameOrderKind.name,
+                  SizedBox(
+                    child: TextNoSelect('Name'),
+                  ),
+                ),
+              ),
+              buildColumn('Ext', extensionWith),
+              buildColumn('System', systemWidth),
+              buildOrderableColumn(
+                GameOrderKind.rating,
+                TextNoSelect('Rating'),
+                width: ratingWidth,
+              ),
+              buildOrderableColumn(
+                GameOrderKind.date,
+                TextNoSelect('Release'),
+                width: releaseWidth,
+              ),
+              buildColumn('Genre', genreWidth),
+              buildColumn('Players', playersWidth),
+            ],
+          ),
         ),
         const SizedBox(height: 10),
         Expanded(
