@@ -125,18 +125,29 @@ class GameListStore extends ChangeNotifier {
     v.addListener(_onFilterUpdate);
   }
 
+  bool _executeScheduledUpdate = false;
   Timer? _filterUpdateTimer;
 
   void _onFilterUpdate() {
-    _filterUpdateTimer ??= Timer(
-      const Duration(milliseconds: 1000),
-      () {
-        final gameFilter =
-            GameFilter.fromJson(filterController.rootOutputData as Map);
-        _applyFilter(gameFilter);
+    if (_filterUpdateTimer != null) {
+      _executeScheduledUpdate = true;
+    } else {
+      void update() {
+        if (_filterUpdateTimer == null || _executeScheduledUpdate) {
+          final gameFilter =
+              GameFilter.fromJson(filterController.rootOutputData as Map);
+          _applyFilter(gameFilter);
+        }
+        _executeScheduledUpdate = false;
         _filterUpdateTimer = null;
-      },
-    );
+      }
+
+      update();
+      _filterUpdateTimer = Timer(
+        const Duration(milliseconds: 1000),
+        update,
+      );
+    }
   }
 
   TextEditingController get downloadedMediaPath =>
