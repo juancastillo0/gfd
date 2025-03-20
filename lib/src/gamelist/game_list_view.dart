@@ -1,4 +1,5 @@
-import 'package:context_plus/context_plus.dart';
+import 'dart:convert';
+
 import 'package:eset/src/base_ui.dart';
 import 'package:eset/src/gamelist/game_model.dart';
 import 'package:eset/src/gamelist/game_state.dart';
@@ -6,6 +7,7 @@ import 'package:eset/src/system_collection/game_filter_model.dart';
 import 'package:eset/src/system_collection/system_model.dart';
 import 'package:eset/src/utils/game_image_widget.dart';
 import 'package:json_form/json_form.dart';
+import 'package:recase/recase.dart';
 
 import 'game_details_view.dart';
 
@@ -107,6 +109,10 @@ class GameListView extends StatelessWidget {
               developers: store.developers,
               publishers: store.publishers,
             ),
+            uiSchema: jsonEncode({
+              for (final k in GameFilter.fromJson({}).toJson().keys)
+                k: {'ui:title': ReCase(k).titleCase}
+            }),
             onFormDataSaved: (data) => store.filterGames(),
           ),
         ),

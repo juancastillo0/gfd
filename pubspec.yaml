@@ -28,6 +28,7 @@ dependencies:
   json_form:
     git: https://github.com/juancastillo0/json_form.git
   shared_preferences: ^2.5.1
+  recase: ^4.1.0
 
 dev_dependencies:
   flutter_test:
