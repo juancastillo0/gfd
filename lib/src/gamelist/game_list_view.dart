@@ -100,7 +100,7 @@ class GameListView extends StatelessWidget {
           child: JsonForm(
             controller: store.filterController,
             uiConfig: JsonFormUiConfig(
-              submitButtonBuilder: (onSubmit) => SizedBox(),
+              submitButtonBuilder: (onSubmit) => const SizedBox(),
             ),
             jsonSchema: GameFilter.jsonSchema(
               genres: store.genres,
@@ -109,10 +109,6 @@ class GameListView extends StatelessWidget {
               developers: store.developers,
               publishers: store.publishers,
             ),
-            uiSchema: jsonEncode({
-              for (final k in GameFilter.fromJson({}).toJson().keys)
-                k: {'ui:title': ReCase(k).titleCase}
-            }),
             onFormDataSaved: (data) => store.filterGames(),
           ),
         ),
