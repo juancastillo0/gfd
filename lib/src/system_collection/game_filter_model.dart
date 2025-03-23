@@ -45,15 +45,14 @@ class GameFilter {
     required Iterable<String> developers,
     required Iterable<String> publishers,
   }) =>
-      // TODO: rating range "maximum": 11 https://github.com/juancastillo0/json_form/issues/15
       '''
 {
   "type": "object",
   "properties": {
     "name": {"type": "string"},
     "description": {"type": "string"},
-    "minRating": {"type": "integer", "default": 1,  "minimum": 1, "maximum": 11, "ui:options": {"widget": "range"}},
-    "maxRating": {"type": "integer", "default": 10,  "minimum": 1, "maximum": 11, "ui:options": {"widget": "range"}},
+    "minRating": {"type": "integer", "default": 1,  "minimum": 1, "maximum": 10, "ui:options": {"widget": "range"}},
+    "maxRating": {"type": "integer", "default": 10,  "minimum": 1, "maximum": 10, "ui:options": {"widget": "range"}},
     "minDate": {"type": "string", "format": "date"},
     "maxDate": {"type": "string", "format": "date"},
     "developer": {"type": "string", "format": "regex"},
