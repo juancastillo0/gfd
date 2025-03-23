@@ -56,6 +56,9 @@ class GameListStore extends ChangeNotifier {
       }
       notifyListeners();
     } else if ({
+      LogicalKeyboardKey.meta,
+      LogicalKeyboardKey.metaLeft,
+      LogicalKeyboardKey.metaRight,
       LogicalKeyboardKey.control,
       LogicalKeyboardKey.controlLeft,
       LogicalKeyboardKey.controlRight,
@@ -798,7 +801,12 @@ class GameListStore extends ChangeNotifier {
   }
 
   void selectGame(Game item) {
-    if (selectedGames.contains(item)) {
+    // Shift: select range from last selected to item
+    if (shiftPressed && selectedGames.isNotEmpty) {
+      final lastSelected = selectedGames.last;
+      final range = [games.indexOf(lastSelected), games.indexOf(item)]..sort();
+      selectedGames.addAll(games.getRange(range.first, range.last + 1));
+    } else if (selectedGames.contains(item)) {
       selectedGames.remove(item);
     } else {
       selectedGames.add(item);

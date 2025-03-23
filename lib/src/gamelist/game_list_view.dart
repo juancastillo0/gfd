@@ -485,7 +485,9 @@ class _GameList extends StatelessWidget {
     }
 
     VoidCallback onTap(Game item) => () {
-          if (store.shiftPressed || store.isSelectingGames) {
+          if (store.controlPressed ||
+              store.shiftPressed ||
+              store.isSelectingGames) {
             store.selectGame(item);
             return;
           }
