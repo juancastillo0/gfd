@@ -7,8 +7,6 @@ import 'package:eset/src/system_collection/game_filter_model.dart';
 import 'package:eset/src/system_collection/system_model.dart';
 import 'package:eset/src/utils/game_image_widget.dart';
 import 'package:json_form/json_form.dart';
-import 'package:recase/recase.dart';
-
 import 'game_details_view.dart';
 
 /// Displays a list of Games.
@@ -610,7 +608,7 @@ class _GameList extends StatelessWidget {
               if (isDesc != null) ...[
                 const SizedBox(width: 4),
                 Icon(
-                  isDesc ? Icons.arrow_upward : Icons.arrow_downward,
+                  isDesc ? Icons.arrow_downward : Icons.arrow_upward,
                   size: 12,
                   color: Theme.of(context).colorScheme.primary,
                 ),

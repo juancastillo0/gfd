@@ -24,11 +24,10 @@ dependencies:
   xml: ^6.5.0
   unorm_dart: ^0.3.0
   file_system_access:
-    path: /Users/juanmanuelcastillo/Desktop/flutter/file_system_access
+    git: https://github.com/juancastillo0/file_system_access_web.git
   json_form:
     git: https://github.com/juancastillo0/json_form.git
   shared_preferences: ^2.5.1
-  recase: ^4.1.0
 
 dev_dependencies:
   flutter_test:
