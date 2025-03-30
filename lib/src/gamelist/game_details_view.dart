@@ -1,9 +1,9 @@
-import 'package:eset/src/base_ui.dart';
-import 'package:eset/src/gamelist/game_model.dart';
-import 'package:eset/src/gamelist/game_state.dart';
-import 'package:eset/src/system_collection/system_model.dart';
-import 'package:eset/src/utils/game_image_widget.dart';
-import 'package:eset/src/utils/string_utils.dart';
+import 'package:gfd/src/base_ui.dart';
+import 'package:gfd/src/gamelist/game_model.dart';
+import 'package:gfd/src/gamelist/game_state.dart';
+import 'package:gfd/src/system_collection/system_model.dart';
+import 'package:gfd/src/utils/game_image_widget.dart';
+import 'package:gfd/src/utils/string_utils.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
 /// Displays detailed information about a Game.

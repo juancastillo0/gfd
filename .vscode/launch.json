@@ -6,7 +6,7 @@
     "configurations": [
     
         {
-            "name": "eset",
+            "name": "gfd",
             "request": "launch",
             "type": "dart",
             // fvm flutter run --web-port 54841 --web-renderer canvaskit
@@ -16,13 +16,13 @@
             ]
         },
         {
-            "name": "eset (profile mode)",
+            "name": "gfd (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "eset (release mode)",
+            "name": "gfd (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

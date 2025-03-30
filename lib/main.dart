@@ -1,5 +1,5 @@
 import 'package:context_plus/context_plus.dart';
-import 'package:eset/src/gamelist/game_state.dart';
+import 'package:gfd/src/gamelist/game_state.dart';
 import 'package:flutter/material.dart';
 
 import 'src/app.dart';

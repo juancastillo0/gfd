@@ -1,5 +1,5 @@
-import 'package:eset/src/base_ui.dart';
-import 'package:eset/src/gamelist/game_state.dart';
+import 'package:gfd/src/base_ui.dart';
+import 'package:gfd/src/gamelist/game_state.dart';
 
 import 'settings_controller.dart';
 

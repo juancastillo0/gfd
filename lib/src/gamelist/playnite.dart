@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:eset/src/gamelist/game_model.dart';
-import 'package:eset/src/utils/byte_utils.dart';
+import 'package:gfd/src/gamelist/game_model.dart';
+import 'package:gfd/src/utils/byte_utils.dart';
 
 Map<String, String> parseIdAndNameDB(Uint8List bytes) {
   final Map<String, String> result = {};

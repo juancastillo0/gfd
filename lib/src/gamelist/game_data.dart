@@ -1,7 +1,7 @@
-import 'package:eset/src/system_collection/game_filter_model.dart';
-import 'package:eset/src/system_collection/system_model.dart';
+import 'package:gfd/src/system_collection/game_filter_model.dart';
+import 'package:gfd/src/system_collection/system_model.dart';
 import 'package:file_system_access/file_system_access.dart' as fsa;
-import 'package:eset/src/base_ui.dart';
+import 'package:gfd/src/base_ui.dart';
 import 'package:flutter/foundation.dart';
 
 class GameListData {

@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:eset/src/base_ui.dart';
-import 'package:eset/src/gamelist/game_model.dart';
-import 'package:eset/src/gamelist/game_state.dart';
-import 'package:eset/src/system_collection/game_filter_model.dart';
-import 'package:eset/src/system_collection/system_model.dart';
-import 'package:eset/src/utils/game_image_widget.dart';
+import 'package:gfd/src/base_ui.dart';
+import 'package:gfd/src/gamelist/game_model.dart';
+import 'package:gfd/src/gamelist/game_state.dart';
+import 'package:gfd/src/system_collection/game_filter_model.dart';
+import 'package:gfd/src/system_collection/system_model.dart';
+import 'package:gfd/src/utils/game_image_widget.dart';
 import 'package:json_form/json_form.dart';
 import 'game_details_view.dart';
 

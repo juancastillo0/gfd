@@ -1,9 +1,9 @@
-import 'package:eset/src/base_ui.dart';
-import 'package:eset/src/collections/collection_detail_view.dart';
-import 'package:eset/src/gamelist/game_state.dart';
-import 'package:eset/src/sample_feature/sample_item.dart';
-import 'package:eset/src/utils/file_drop_target.dart';
-import 'package:eset/src/utils/game_image_widget.dart';
+import 'package:gfd/src/base_ui.dart';
+import 'package:gfd/src/collections/collection_detail_view.dart';
+import 'package:gfd/src/gamelist/game_state.dart';
+import 'package:gfd/src/sample_feature/sample_item.dart';
+import 'package:gfd/src/utils/file_drop_target.dart';
+import 'package:gfd/src/utils/game_image_widget.dart';
 
 import 'package:file_system_access/file_system_access.dart' as fsa;
 import 'package:json_form/json_form.dart';

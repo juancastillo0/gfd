@@ -1,8 +1,8 @@
-import 'package:eset/src/base_ui.dart';
-import 'package:eset/src/collections/collection_list_view.dart';
-import 'package:eset/src/collections/collection_detail_view.dart';
-import 'package:eset/src/gamelist/game_details_view.dart';
-import 'package:eset/src/gamelist/game_list_view.dart';
+import 'package:gfd/src/base_ui.dart';
+import 'package:gfd/src/collections/collection_list_view.dart';
+import 'package:gfd/src/collections/collection_detail_view.dart';
+import 'package:gfd/src/gamelist/game_details_view.dart';
+import 'package:gfd/src/gamelist/game_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';

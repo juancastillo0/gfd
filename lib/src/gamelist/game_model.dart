@@ -1,4 +1,4 @@
-import 'package:eset/src/gamelist/playnite.dart';
+import 'package:gfd/src/gamelist/playnite.dart';
 import 'package:xml/xml.dart';
 
 /// <game>

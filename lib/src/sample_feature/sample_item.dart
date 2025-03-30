@@ -1,4 +1,4 @@
-import 'package:eset/src/system_collection/game_filter_model.dart';
+import 'package:gfd/src/system_collection/game_filter_model.dart';
 import 'package:xml/xml.dart';
 
 /// A placeholder class that represents an entity or model.

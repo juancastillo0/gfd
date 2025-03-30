@@ -1,4 +1,4 @@
-import 'package:eset/src/gamelist/game_model.dart';
+import 'package:gfd/src/gamelist/game_model.dart';
 import "package:unorm_dart/unorm_dart.dart" as unorm;
 
 class GameFilter {

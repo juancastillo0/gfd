@@ -2,11 +2,11 @@ export 'package:context_plus/context_plus.dart';
 export 'package:flutter/material.dart' hide Text;
 
 import 'package:context_plus/context_plus.dart';
-import 'package:eset/src/collections/collection_list_view.dart';
-import 'package:eset/src/gamelist/game_list_view.dart';
-import 'package:eset/src/gamelist/game_state.dart';
-import 'package:eset/src/settings/settings_view.dart';
-import 'package:eset/src/utils/snackbars_widget.dart';
+import 'package:gfd/src/collections/collection_list_view.dart';
+import 'package:gfd/src/gamelist/game_list_view.dart';
+import 'package:gfd/src/gamelist/game_state.dart';
+import 'package:gfd/src/settings/settings_view.dart';
+import 'package:gfd/src/utils/snackbars_widget.dart';
 import 'package:flutter/material.dart' hide Text;
 import 'package:flutter/material.dart' as material;
 
