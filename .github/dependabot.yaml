@@ -1,0 +1,19 @@
+# Dependabot configuration file.
+# See https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+version: 2
+enable-beta-ecosystems: true
+
+updates:
+  # https://github.com/orgs/community/discussions/14200
+  # Enable weekly pubspec.yaml dependencies checks.
+  - package-ecosystem: "pub"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+
+  # Maintain dependencies for GitHub Actions.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

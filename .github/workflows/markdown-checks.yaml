@@ -1,0 +1,18 @@
+name: Markdown Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# TODO: dart-fixer extension
+jobs:
+  # Check Markdown links
+  markdown-link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          base-branch: main
+          config-file: .github/markdown-link-check.config.json

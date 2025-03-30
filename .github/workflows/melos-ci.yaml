@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # Check code formatting and static analysis on a single OS (linux)
+  # against Dart dev.
+  analyze:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        sdk: [stable]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ matrix.sdk }}
+
+      - run: flutter pub global activate melos
+
+      - id: install
+        run: melos bootstrap
+
+      - run: melos run build_runner
+
+      - run: dart format --set-exit-if-changed .
+        if: always() && steps.install.outcome == 'success'
+
+      - run: melos run analyze
+        if: always() && steps.install.outcome == 'success'
+
+      - id: coverage
+        run: melos run coverage
+        if: always() && steps.install.outcome == 'success'
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        if: always() && steps.coverage.outcome == 'success'
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          files: "*/coverage/lcov.info"
+
+      - name: Upload leto coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        if: always() && steps.coverage.outcome == 'success'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
