@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
@@ -21,25 +22,21 @@ jobs:
         with:
           channel: ${{ matrix.sdk }}
 
-      - run: flutter pub global activate melos
-
       - id: install
-        run: melos bootstrap
-
-      - run: melos run build_runner
+        run: dart pub get
 
       - run: dart format --set-exit-if-changed .
         if: always() && steps.install.outcome == 'success'
 
-      - run: melos run analyze
+      - run: dart analyze
         if: always() && steps.install.outcome == 'success'
 
       - id: coverage
-        run: melos run coverage
+        run: flutter test --coverage --no-pub
         if: always() && steps.install.outcome == 'success'
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         if: always() && steps.coverage.outcome == 'success'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
