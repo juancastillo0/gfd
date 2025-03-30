@@ -50,6 +50,7 @@ class EsDeData {
 /// ```xml
 /// <string name="ROMDirectory" value="F:\Emulation\roms" />
 /// <string name="MediaDirectory" value="F:\Emulation/storage/downloaded_media" />
+/// Installation value="C:\Users\user\EmuDeck\EmulationStation-DE\ES-DE" />
 /// <string name="ThemeSet" value="canvas-es-de" />
 /// ```
 class EsDeSettings {
