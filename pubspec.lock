@@ -318,7 +318,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: "9703ef39dd3faa1c1da1632bcb9a9c79fde27c58"
+      resolved-ref: "7317b51799ca85553e7a8922eeb2437476f9bf8a"
       url: "https://github.com/juancastillo0/file_system_access_web.git"
     source: git
     version: "0.0.1"
@@ -521,9 +521,11 @@ packages:
   json_form:
     dependency: "direct main"
     description:
-      path: "/Users/juanmanuelcastillo/Desktop/flutter/json_form"
-      relative: false
-    source: path
+      path: "."
+      ref: HEAD
+      resolved-ref: "0eb07179280db43d7a51032f70d73df68de47f3a"
+      url: "https://github.com/juancastillo0/json_form.git"
+    source: git
     version: "0.0.1+1"
   just_audio:
     dependency: transitive
@@ -1198,10 +1200,10 @@ packages:
     dependency: transitive
     description:
       name: web
-      sha256: cd3543bd5798f6ad290ea73d210f423502e71900302dde696f8bff84bf89a1cb
+      sha256: "868d88a33d8a87b18ffc05f9f030ba328ffefba92d6c127917a2ba740f9cfe4a"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.1.1"
   web_socket_channel:
     dependency: transitive
     description:
