@@ -23,12 +23,12 @@ jobs:
           channel: ${{ matrix.sdk }}
 
       - id: install
-        run: dart pub get
+        run: flutter pub get
 
       - run: dart format --set-exit-if-changed .
         if: always() && steps.install.outcome == 'success'
 
-      - run: dart analyze
+      - run: flutter analyze
         if: always() && steps.install.outcome == 'success'
 
       - id: coverage
