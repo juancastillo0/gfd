@@ -1,6 +1,7 @@
 import 'package:gfd/src/gamelist/playnite.dart';
 import 'package:xml/xml.dart';
 
+/// ```xml
 /// <game>
 ///   <path>./Sonic the Hedgehog 3 (E).zip</path>
 ///   <name>Sonic The Hedgehog 3</name>
@@ -12,6 +13,7 @@ import 'package:xml/xml.dart';
 ///   <genre>Platform</genre>
 ///   <players>1-2</players>
 /// </game>
+/// ```
 class Game {
   final String system;
   final String path;

@@ -379,7 +379,7 @@ class GameListStore extends ChangeNotifier {
           f = f.replaceAll(values.$1, values.$2);
         }
         final w = await c.createWritable(keepExistingData: false);
-        await w.write(fsa.FileSystemWriteChunkType.string(f));
+        await w.write(fsa.WriteChunkType.string(f));
         await w.close();
       }));
     }
@@ -445,7 +445,7 @@ class GameListStore extends ChangeNotifier {
       }
       final w = await collectionsFile.createWritable(keepExistingData: add);
       await w.write(
-        fsa.FileSystemWriteChunkType.string(items.join('\n')),
+        fsa.WriteChunkType.string(items.join('\n')),
       );
       await w.close();
     }
@@ -505,7 +505,7 @@ class GameListStore extends ChangeNotifier {
     fsa.FileSystemDirectoryHandle? collectionsDir;
     if (kIsWeb) {
       // TODO: abstract persistence
-      final p = await fsa.FileSystem.instance.getPersistance();
+      final p = await fsa.FileSystem.instance.getPersistence();
 
       final esDeItem = paths.esDeAppDataConfigPath.persistedId == null
           ? null
@@ -623,7 +623,7 @@ class GameListStore extends ChangeNotifier {
     fsa.FileSystemFileHandle? genresDb;
     fsa.FileSystemDirectoryHandle? playniteFiles;
     if (kIsWeb) {
-      final p = await fsa.FileSystem.instance.getPersistance();
+      final p = await fsa.FileSystem.instance.getPersistence();
 
       final playniteItem = paths.playniteLibraryPath.persistedId == null
           ? null
@@ -929,8 +929,7 @@ extension FileSystemHandleDir on fsa.FileSystemDirectoryHandle {
     final bytes = await f.readAsBytes();
     final writable =
         await newFile.value.createWritable(keepExistingData: false);
-    await writable
-        .write(fsa.FileSystemWriteChunkType.bufferSource(bytes.buffer));
+    await writable.write(fsa.WriteChunkType.bufferSource(bytes.buffer));
     await writable.close();
 
     await dirR.value.removeEntry(initialName);

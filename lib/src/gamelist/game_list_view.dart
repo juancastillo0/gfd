@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:gfd/src/base_ui.dart';
 import 'package:gfd/src/gamelist/game_model.dart';
 import 'package:gfd/src/gamelist/game_state.dart';

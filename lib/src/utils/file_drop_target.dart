@@ -15,7 +15,7 @@ class FileDropTarget extends StatefulWidget {
   final void Function(List<FileSystemFileWebSafe>) onDrop;
 
   @override
-  _FileDropTargetState createState() => _FileDropTargetState();
+  State<FileDropTarget> createState() => _FileDropTargetState();
 }
 
 class _FileDropTargetState extends State<FileDropTarget> {

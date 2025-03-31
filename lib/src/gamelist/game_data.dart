@@ -114,7 +114,7 @@ class GameListPath<H extends fsa.FileSystemHandle> {
 
   Future<void> setHandle(H h) async {
     if (kIsWeb) {
-      final p = await fsa.FileSystem.instance.getPersistance();
+      final p = await fsa.FileSystem.instance.getPersistence();
       final entity = await p.put(h);
       persistedId = entity.id;
     }
