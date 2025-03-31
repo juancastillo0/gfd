@@ -6,6 +6,9 @@ on:
   push:
     branches:
       - main
+permissions:
+  contents: write
+  discussions: write
 jobs:
   build:
     name: Build and deploy Flutter web
