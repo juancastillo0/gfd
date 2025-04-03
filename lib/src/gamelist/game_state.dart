@@ -19,8 +19,7 @@ import 'package:xml/xml.dart';
 
 class GameListStore extends ChangeNotifier {
   GameListStore() {
-    _loadState();
-    _loadGames();
+    _loadState().then((_) => _loadGames());
     if (kIsWeb) {
       fsa.FileSystem.instance.webDropFileEvents();
     }
@@ -201,7 +200,7 @@ class GameListStore extends ChangeNotifier {
     String dirPath = item.system == 'pc'
         ? playniteLibraryPath.text
         : downloadedMediaPath.text;
-    if (!dirPath.endsWith('/')) dirPath = '$dirPath/';
+    if (!endsWithPathSeparator(dirPath)) dirPath = '$dirPath/';
 
     if (item.system == 'pc') {
       final l = type == SystemImageAsset.screenshots
@@ -216,7 +215,8 @@ class GameListStore extends ChangeNotifier {
       return '${dirPath}files/$relative';
     }
     final a = type.name.replaceFirst(r'$', '');
-    return '$dirPath${item.system}/$a/${item.filename}.png';
+    final path = '$dirPath${item.system}/$a/${item.filename}.png';
+    return path;
   }
 
   void changeImageAsset(SystemImageAsset? imageAssetType) {
@@ -457,7 +457,7 @@ class GameListStore extends ChangeNotifier {
     await prefs.setString(_sharedPreferenceKey, data);
   }
 
-  void _loadState() async {
+  Future<void> _loadState() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final storeData = prefs.getString(_sharedPreferenceKey);
     if (storeData != null) {
@@ -553,7 +553,7 @@ class GameListStore extends ChangeNotifier {
           }
           final xmlFile = await f.value.getFile();
           final xml = await xmlFile.readAsString();
-          systemList.add((dir.name.split('/').last, xml));
+          systemList.add((dir.name.split(pathSeparator).last, xml));
         }
       }
       notifyListeners();
@@ -708,12 +708,12 @@ class GameListStore extends ChangeNotifier {
       if (g.publisher != null) publishers.add(g.publisher!);
       if (g.developer != null) developers.add(g.developer!);
     }
-    if (isInitialLoad &&
-        storedFilters.containsKey(storedFilterController.text)) {
-      selectFilter(storedFilterController.text);
-    } else {
+    if (!isInitialLoad) {
       filterGames();
+    } else if (storedFilters.containsKey(storedFilterController.text)) {
+      selectFilter(storedFilterController.text);
     }
+    notifyListeners();
   }
 
   void toggleListGridView() {
@@ -863,17 +863,21 @@ class GameListStore extends ChangeNotifier {
   }
 }
 
+final pathSeparator = RegExp(r'[/\\]');
+bool endsWithPathSeparator(String value) =>
+    value.isNotEmpty && value.lastIndexOf(pathSeparator) == value.length - 1;
+
 extension FileSystemHandleName on fsa.FileSystemHandle {
   String get filename => name.substring(
         name.lastIndexOf(RegExp(r'[/\\].')) + 1,
-        name.endsWith('/') ? name.length - 1 : null,
+        endsWithPathSeparator(name) ? name.length - 1 : null,
       );
 }
 
 extension FileSystemHandleDir on fsa.FileSystemDirectoryHandle {
   Future<fsa.Result<fsa.FileSystemFileHandle, fsa.GetHandleError>>
       getNestedFileHandle(String path, {bool? create}) async {
-    final index = path.lastIndexOf('/');
+    final index = path.lastIndexOf(pathSeparator);
     final dirR = await getNestedDirectoryHandle(
       path.substring(0, index),
       create: create,
@@ -886,8 +890,10 @@ extension FileSystemHandleDir on fsa.FileSystemDirectoryHandle {
 
   Future<fsa.Result<fsa.FileSystemDirectoryHandle, fsa.GetHandleError>>
       getNestedDirectoryHandle(String path, {bool? create}) async {
-    final paths =
-        path.split('/').where((v) => v.isNotEmpty).toList(growable: false);
+    final paths = path
+        .split(pathSeparator)
+        .where((v) => v.isNotEmpty)
+        .toList(growable: false);
     fsa.FileSystemDirectoryHandle dir = this;
     for (final p in paths) {
       final d = await dir.getDirectoryHandle(p, create: create);
@@ -908,9 +914,10 @@ extension FileSystemHandleDir on fsa.FileSystemDirectoryHandle {
       await io.File('$name/$initialPath').rename('$name/$newPath');
       return fsa.Ok(null);
     }
-    final initialName = initialPath.substring(initialPath.lastIndexOf('/') + 1);
+    final initialName =
+        initialPath.substring(initialPath.lastIndexOf(pathSeparator) + 1);
     final dirR = await getNestedDirectoryHandle(
-      initialPath.substring(0, initialPath.lastIndexOf('/')),
+      initialPath.substring(0, initialPath.lastIndexOf(pathSeparator)),
     );
     if (dirR is! fsa.Ok<fsa.FileSystemDirectoryHandle, fsa.GetHandleError>) {
       return dirR;
