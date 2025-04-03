@@ -27,7 +27,7 @@ dependencies:
     git: https://github.com/juancastillo0/file_system_access_web.git
   json_form:
     git: https://github.com/juancastillo0/json_form.git
-  shared_preferences: ^2.5.1
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:
