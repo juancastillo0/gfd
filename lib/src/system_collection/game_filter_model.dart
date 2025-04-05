@@ -17,6 +17,7 @@ class GameFilter {
   final String publisher;
   final int? minPlayers;
   final int? maxPlayers;
+  final String extension;
   final List<GameOrder> order;
 
   GameFilter({
@@ -35,6 +36,7 @@ class GameFilter {
     required this.publisher,
     required this.minPlayers,
     required this.maxPlayers,
+    required this.extension,
     required this.order,
   });
 
@@ -59,6 +61,7 @@ class GameFilter {
     "publisher": {"type": "string", "format": "regex"},
     "minPlayers": {"type": "integer", "minimum": 1},
     "maxPlayers": {"type": "integer", "minimum": 1},
+    "extension": {"type": "string"},
     "order": {"type": "array", "ui:options": {"copyable": false}, "items": {
       "type": "object", "properties": {
         "kind": {"type": "string", "enum": ["name", "date", "rating"]},
@@ -103,6 +106,7 @@ class GameFilter {
       publisher: json['publisher'] ?? '',
       minPlayers: json['minPlayers'],
       maxPlayers: json['maxPlayers'],
+      extension: json['extension'] ?? '',
       order: json['order'] == null
           ? const []
           : (json['order'] as List)
@@ -118,6 +122,7 @@ class GameFilter {
         (collections.isEmpty || collections.any(gameCollections.contains)) &&
         stringMatches(name, g.name) &&
         stringMatches(description, g.desc) &&
+        stringMatches(extension, g.extension) &&
         (g.rating == null || (g.rating! * 10).toInt() >= minRating) &&
         (g.rating == null || (g.rating! * 10).toInt() <= maxRating) &&
         (minDate == null ||
@@ -166,6 +171,7 @@ class GameFilter {
       'maxDate': maxDate,
       'minPlayers': minPlayers,
       'maxPlayers': maxPlayers,
+      'extension': extension,
       'order': order.map((o) => o.toJson()).toList(),
     };
   }
