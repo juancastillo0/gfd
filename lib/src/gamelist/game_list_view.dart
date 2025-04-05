@@ -553,7 +553,7 @@ class _GameList extends StatelessWidget {
           final item = items[index];
           return Container(
             color: store.selectedGames.contains(item)
-                ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
                 : null,
             child: InkWell(
               key: Key(item.path),
@@ -675,7 +675,10 @@ class _GameList extends StatelessWidget {
               final item = items[index];
               return Container(
                 color: store.selectedGames.contains(item)
-                    ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+                    ? Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.1)
                     : null,
                 child: InkWell(
                   key: Key(item.path),
