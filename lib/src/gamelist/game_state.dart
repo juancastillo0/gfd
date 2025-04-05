@@ -11,6 +11,7 @@ import 'package:gfd/src/sample_feature/sample_item.dart';
 import 'package:gfd/src/system_collection/game_filter_model.dart';
 import 'package:gfd/src/system_collection/system_model.dart';
 import 'package:flutter/foundation.dart';
+import 'package:gfd/src/utils/string_utils.dart';
 import 'package:json_form/json_form.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_system_access/file_system_access.dart' as fsa;
@@ -324,7 +325,7 @@ class GameListStore extends ChangeNotifier {
 
     final Map<String, List<MapEntry<Game, String>>> fullnameChange = {};
     gamesToRename.forEach((game, value) {
-      if (game.name == value.substring(0, value.lastIndexOf('.'))) {
+      if (game.filename != value.substring(0, value.lastIndexOf('.'))) {
         fullnameChange
             .putIfAbsent(game.system, () => [])
             .add(MapEntry(game, value));
@@ -390,7 +391,10 @@ class GameListStore extends ChangeNotifier {
     );
     await replaceInHandles(
       gamelists,
-      (g, n) => ('<path>${g.path}</path>', '<path>./$n</path>'),
+      (g, n) => (
+        '<path>${escapeXmlContent(g.path)}</path>',
+        '<path>./${escapeXmlContent(n)}</path>'
+      ),
     );
 
     /// Reselect the same games
