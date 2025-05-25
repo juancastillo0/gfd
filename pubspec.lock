@@ -25,14 +25,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.0"
-  async_listenable:
-    dependency: transitive
-    description:
-      name: async_listenable
-      sha256: "320e3ad55f1d05f3801229d13e39331d2d4ba7052683b69607124cefd0f8aa6e"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.0"
   audio_session:
     dependency: transitive
     description:
@@ -125,34 +117,42 @@ packages:
     dependency: "direct main"
     description:
       name: context_plus
-      sha256: "52cc28d5ab1ddc1c0fc0b994903d7ac141a280deb4e7baafdb978f922e0544e7"
+      sha256: "275e0c1286b23bea096eee638931957e6dba5fd93e5d0b8927bc4c694234db67"
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.3"
+    version: "6.0.0"
+  context_plus_core:
+    dependency: transitive
+    description:
+      name: context_plus_core
+      sha256: a07dc1ab66a71334c87ba90010466cad0942272522ee88b55c05af8ea1fb18d6
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   context_ref:
     dependency: transitive
     description:
       name: context_ref
-      sha256: b4ddff20aa98e1946c22a5ce79bd86de2d1b27b18fcc7eab054f206b683c5e0e
+      sha256: e84e55a999208609f6610e4aa5596e884efdb7299ec9c4862facfdd1fac7dbfd
       url: "https://pub.dev"
     source: hosted
-    version: "1.4.3"
+    version: "3.0.0"
   context_watch:
     dependency: transitive
     description:
       name: context_watch
-      sha256: "5dd37a2e40c3088487d8e85170b52afd110ccf0ee3d35159138a89dfd1a018d3"
+      sha256: "08edf57d433a3904b131dc79d0f517f3cc212a5c313583b4bd3e48486ceb6fe5"
       url: "https://pub.dev"
     source: hosted
-    version: "5.1.2"
+    version: "7.0.0"
   context_watch_base:
     dependency: transitive
     description:
       name: context_watch_base
-      sha256: "3116155e09eefb270464b3b4fbd609c5b852693899d72d7bebe5e34918c72ba0"
+      sha256: "64e98aa03f6db48c318a6604c09f47651017669e7534a3502cad2684b21075f7"
       url: "https://pub.dev"
     source: hosted
-    version: "6.0.2"
+    version: "8.0.0"
   convert:
     dependency: transitive
     description:
